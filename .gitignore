@@ -1,15 +1,51 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# Gradle build folders
+/build/
+*/build/
+.gradle/
+
+# Local configuration file (SDK path, etc)
 local.properties
+
+# IDE files
+.idea/
+*.iml
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Signing keys
+*.jks
+*.keystore
+signing.properties
+
+# Logs
+*.log
+
+# Capture files
+captures/
+
+# Android Studio/IntelliJ
+*.iws
+*.ipr
+
+# NDK / CMake
+.cxx/
+.externalNativeBuild/
+*.so
+obj/
+
+# Compiled class files
+*.class
+
+# JAR and other compiled output
+*.jar
+*.war
+*.ear
+
+# APKs
+*.apk
+*.ap_
+
+# Kotlin-specific (optional)
+*.kotlin_module
