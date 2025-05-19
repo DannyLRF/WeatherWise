@@ -4,7 +4,8 @@ package com.example.weatherwise.ui.auth.mfa
 // MFA 相關的 UI 界面，我們稍後會用到您上傳的版本
 // import com.example.weatherwise.ui.auth.MFASetupScreen
 // import com.example.weatherwise.ui.auth.MFAVerificationScreen
-
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import android.app.Activity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.material.icons.automirrored.filled.List // Add this import
+import androidx.compose.material.icons.filled.ArrowBack
 
 // import com.example.weatherwise.R // 確保 R 文件被正確導入，如果您的 UI 中使用了 R.drawable 等
 
@@ -71,7 +73,10 @@ fun PhoneMfaSetupScreen(
                 title = { Text("電話 MFA 設定") },
                 navigationIcon = {
                     IconButton(onClick = { onMfaSetupComplete() }) { // 返回按鈕也觸發完成回調
-                        Icon(androidx.compose.material.icons.automirrored.filled.ArrowBack, contentDescription = "返回")
+                        Icon(                       // ← 這裡要顯式寫 imageVector 參數
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "返回"
+                        )
                     }
                 }
             )

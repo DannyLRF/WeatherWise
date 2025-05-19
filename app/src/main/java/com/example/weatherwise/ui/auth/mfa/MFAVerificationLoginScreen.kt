@@ -15,6 +15,9 @@ import com.example.weatherwise.ui.auth.AuthUiState
 import com.example.weatherwise.ui.auth.AuthViewModel
 import com.google.firebase.auth.*
 import com.google.firebase.auth.PhoneMultiFactorInfo
+import com.google.firebase.auth.PhoneMultiFactorGenerator
+
+
 
 @Composable
 fun MFAVerificationLoginScreen(
@@ -85,7 +88,7 @@ fun MFAVerificationLoginScreen(
                 // 重新發送驗證碼的邏輯
                 // 需要確保 authViewModel.mfaResolver 和 authViewModel.mfaHints 不為空
                 val resolver = authViewModel.mfaResolver
-                val phoneHint = authViewModel.mfaHints?.find { it.factorId == PhoneMultiFactorInfo.FACTOR_ID } as? PhoneMultiFactorInfo
+                val phoneHint = authViewModel.mfaHints?.find { it.factorId == PhoneMultiFactorGenerator.FACTOR_ID } as? PhoneMultiFactorInfo
                 if (resolver != null && phoneHint?.phoneNumber != null) {
                     phoneMfaViewModel.startPhoneNumberVerificationForLogin(activity, resolver.session,
                         phoneHint.phoneNumber

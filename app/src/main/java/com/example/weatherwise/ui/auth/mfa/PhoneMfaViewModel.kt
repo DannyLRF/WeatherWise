@@ -3,7 +3,7 @@ package com.example.weatherwise.ui.auth.mfa
 // MFA 相關的 UI 界面，我們稍後會用到您上傳的版本
 // import com.example.weatherwise.ui.auth.MFASetupScreen
 // import com.example.weatherwise.ui.auth.MFAVerificationScreen
-
+import com.google.firebase.auth.PhoneMultiFactorGenerator
 import android.app.Activity
 import android.util.Log
 import androidx.compose.foundation.layout.*
@@ -213,7 +213,7 @@ class PhoneMfaViewModel : ViewModel() {
         viewModelScope.launch {
             val currentUser = firebaseAuth.currentUser ?: return@launch
             isLoading = true
-            val phoneFactor = currentUser.multiFactor.enrolledFactors.find { it.factorId == PhoneMultiFactorInfo.FACTOR_ID }
+            val phoneFactor = currentUser.multiFactor.enrolledFactors.find { it.factorId == PhoneMultiFactorGenerator.FACTOR_ID }
             if (phoneFactor == null) {
                 infoMessage = "未找到已啟用的電話 MFA。"
                 isLoading = false
