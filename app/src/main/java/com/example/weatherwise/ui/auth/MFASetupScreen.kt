@@ -1,4 +1,4 @@
-package com.example.weatherwise
+package com.example.weatherwise.ui.auth
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -26,15 +26,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.weatherwise.R
 import com.example.weatherwise.ui.theme.StyledTextField
 import com.example.weatherwise.ui.theme.WeatherWiseTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterScreen(onRegisterClick: (String, String) -> Unit) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
+fun MFASetupScreen(onSetupMFA: (String) -> Unit, onSkipMFA: () -> Unit) {
+    var phoneNumber by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -45,51 +44,47 @@ fun RegisterScreen(onRegisterClick: (String, String) -> Unit) {
         verticalArrangement = Arrangement.Center
     ) {
         Image(
-            painter = painterResource(id = R.drawable.rain),
-            contentDescription = stringResource(R.string.register),
+            painter = painterResource(id = R.drawable.lock),
+            contentDescription = stringResource(R.string.MFA),
             modifier = Modifier
                 .size(250.dp)
         )
+        Text(stringResource(R.string.mfa_setup),
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onBackground)
         Spacer(modifier = Modifier.height(16.dp))
         Column(modifier = Modifier.fillMaxWidth()) {
-            Text(text = stringResource(R.string.email))
+//            Text(text = stringResource(R.string.phone_number))
             StyledTextField(
-                value = email,
-                onValueChange = { email = it },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Text(text = stringResource(R.string.password))
-            StyledTextField(
-                value = password,
-                onValueChange = { password = it },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Column(modifier = Modifier.fillMaxWidth()) {Text(text = stringResource(R.string.confirm_password))
-            StyledTextField(
-                value = confirmPassword,
-                onValueChange = { confirmPassword = it },
+                value = phoneNumber,
+                onValueChange = { phoneNumber = it },
                 modifier = Modifier.fillMaxWidth()
             )
         }
         Spacer(modifier = Modifier.height(16.dp))
         Button(
-            onClick = { onRegisterClick(email, password) },
+            onClick = { onSetupMFA(phoneNumber) },
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp)
         ) {
-            Text(stringResource(R.string.register))
+            Text(stringResource(R.string.setup_mfa))
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(
+            onClick = onSkipMFA,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Text(stringResource(R.string.skip_mfa))
         }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun RegisterScreenPreview() {
+fun MFASetupScreenPreview() {
     WeatherWiseTheme(darkTheme = true) {
-        RegisterScreen(onRegisterClick = { _, _ -> })
+        MFASetupScreen(onSetupMFA = {},
+            onSkipMFA= {})
     }
 }

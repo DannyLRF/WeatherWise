@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.weatherwise"
-        minSdk = 26
+        minSdk = 35
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -46,6 +46,20 @@ dependencies {
     implementation(libs.androidx.appcompat) //add this dependency if not added yet
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.navigation.compose)
+    implementation(platform(libs.firebase.bom)) // 檢查最新版本
+    implementation(libs.firebase.auth.ktx)
+    implementation(libs.firebase.firestore.ktx)
+    implementation(libs.retrofit)
+    //noinspection UseTomlInstead
+    implementation(libs.converter.gson)
+    implementation(libs.okhttp)
+    implementation(libs.logging.interceptor)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.ktx.v290)
+    implementation(libs.material3) // Ensure you have this for M3 components
+    // For Material Icons (these should provide ArrowBack)
+    implementation(libs.androidx.material.icons.core) // Or latest
+    implementation(libs.material.icons.extended)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
