@@ -1,8 +1,5 @@
 package com.example.weatherwise.ui.auth
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.weatherwise.data.repository.AuthRepository
