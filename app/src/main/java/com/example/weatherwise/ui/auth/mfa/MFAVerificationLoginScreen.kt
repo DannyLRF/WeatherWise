@@ -13,7 +13,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import com.example.weatherwise.ui.auth.AuthUiState
 import com.example.weatherwise.ui.auth.AuthViewModel
-import com.google.firebase.auth.*
 import com.google.firebase.auth.PhoneMultiFactorInfo
 import com.google.firebase.auth.PhoneMultiFactorGenerator
 
@@ -91,7 +90,7 @@ fun MFAVerificationLoginScreen(
                 val phoneHint = authViewModel.mfaHints?.find { it.factorId == PhoneMultiFactorGenerator.FACTOR_ID } as? PhoneMultiFactorInfo
                 if (resolver != null && phoneHint?.phoneNumber != null) {
                     phoneMfaViewModel.startPhoneNumberVerificationForLogin(activity, resolver.session,
-                        phoneHint.phoneNumber
+                        phoneHint
                     )
                 } else {
                     Toast.makeText(context, "無法重新發送驗證碼，請重新登錄", Toast.LENGTH_LONG).show()

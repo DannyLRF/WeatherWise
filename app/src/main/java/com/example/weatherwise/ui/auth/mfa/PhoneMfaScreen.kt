@@ -4,8 +4,6 @@ package com.example.weatherwise.ui.auth.mfa
 // MFA 相關的 UI 界面，我們稍後會用到您上傳的版本
 // import com.example.weatherwise.ui.auth.MFASetupScreen
 // import com.example.weatherwise.ui.auth.MFAVerificationScreen
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import android.app.Activity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -33,8 +32,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
-import androidx.compose.material.icons.automirrored.filled.List // Add this import
-import androidx.compose.material.icons.filled.ArrowBack
 
 // import com.example.weatherwise.R // 確保 R 文件被正確導入，如果您的 UI 中使用了 R.drawable 等
 
@@ -46,7 +43,7 @@ fun PhoneMfaSetupScreen(
     onMfaSetupComplete: () -> Unit // 新增回調，用於設置完成後導航
 ) {
     val currentUser = FirebaseAuth.getInstance().currentUser
-    val context = LocalContext.current
+    LocalContext.current
 
     // 監聽 isMfaSuccessfullySetup 的變化，以便在設置/禁用成功後執行回調
     LaunchedEffect(phoneMfaViewModel.isMfaSuccessfullySetup, phoneMfaViewModel.infoMessage) {

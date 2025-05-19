@@ -5,7 +5,7 @@ package com.example.weatherwise
 // import com.example.weatherwise.ui.auth.MFASetupScreen
 // import com.example.weatherwise.ui.auth.MFAVerificationScreen
 
-import android.app.Activity
+import androidx.activity.compose.LocalActivity
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -27,7 +27,6 @@ import com.example.weatherwise.ui.navigation.Screen
 import com.example.weatherwise.ui.screens.LoginScreen
 import com.example.weatherwise.ui.theme.WeatherWiseTheme
 import com.google.firebase.auth.*
-import com.google.firebase.auth.PhoneAuthProvider
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,7 +45,7 @@ class MainActivity : ComponentActivity() {
                 val currentUser by authViewModel.currentUser.collectAsState()
                 val authState by authViewModel.authUiState.collectAsState()
                 val context = LocalContext.current
-                val activity = LocalContext.current as Activity // 獲取當前 Activity
+                val activity = LocalActivity.current // 使用 LocalActivity 獲取當前 Activity
 
                 var currentScreen by remember { mutableStateOf(if (currentUser == null) Screen.Login else Screen.WeatherHome) }
 
@@ -69,12 +68,19 @@ class MainActivity : ComponentActivity() {
                         is AuthUiState.MfaRequired -> {
                             // 當需要 MFA 時，導航到 MFA 驗證界面
                             // 我們需要將 resolver 和 hints 傳遞給 MFA 驗證流程
-                            val phoneHint = state.hints.find { it.factorId == PhoneAuthProvider.PROVIDER_ID } as? PhoneMultiFactorInfo
-                            if (phoneHint?.phoneNumber != null) {
-                                phoneMfaViewModel.startPhoneNumberVerificationForLogin(activity, state.resolver.session,
-                                    phoneHint.phoneNumber
-                                )
-                                currentScreen = Screen.MfaVerifyLogin
+                            val phoneHint = state.hints.find { it.factorId == PhoneMultiFactorGenerator.FACTOR_ID } as? PhoneMultiFactorInfo
+                            if (phoneHint != null) {
+                                activity?.let { nonNullActivity ->
+                                    phoneMfaViewModel.startPhoneNumberVerificationForLogin(
+                                        nonNullActivity,
+                                        state.resolver.session,
+                                        phoneHint
+                                    )
+                                    currentScreen = Screen.MfaVerifyLogin
+                                } ?: run {
+                                    // 處理 activity 為空的情況
+                                    Toast.makeText(context, "無法獲取 Activity 實例", Toast.LENGTH_SHORT).show()
+                                }
                             } else {
                                 Toast.makeText(context, "未找到可用的電話 MFA 因素", Toast.LENGTH_LONG).show()
                                 authViewModel.logout() // 如果無法進行MFA，則登出
@@ -139,33 +145,33 @@ class MainActivity : ComponentActivity() {
                         }
                         Screen.MfaSetup -> {
                             // 這裡使用 PhoneMfaSetupScreen，它內部使用 PhoneMfaViewModel
-                            // MFASetupScreen 是您之前上傳的文件名，我們假設其功能與 PhoneMfaSetupScreen 類似
-                            // 您需要將您 MFASetupScreen.kt 中的 UI 與 PhoneMfaViewModel 結合
-                            // 以下為使用我們定義的 PhoneMfaSetupScreen 的示例
-                            com.example.weatherwise.ui.auth.mfa.PhoneMfaSetupScreen( // 使用完整路徑以避免歧義
-                                phoneMfaViewModel = phoneMfaViewModel,
-                                activity = activity,
-                                onMfaSetupComplete = { // 添加一個回調，以便成功設置後返回主頁
-                                    currentScreen = Screen.WeatherHome
-                                    Toast.makeText(context, "MFA 設置已更新", Toast.LENGTH_SHORT).show()
-                                }
-                            )
+                            activity?.let { nonNullActivity ->
+                                com.example.weatherwise.ui.auth.mfa.PhoneMfaSetupScreen(
+                                    phoneMfaViewModel = phoneMfaViewModel,
+                                    activity = nonNullActivity,
+                                    onMfaSetupComplete = { // 添加一個回調，以便成功設置後返回主頁
+                                        currentScreen = Screen.WeatherHome
+                                        Toast.makeText(context, "MFA 設置已更新", Toast.LENGTH_SHORT).show()
+                                    }
+                                )
+                            } ?: run {
+                                Text("無法獲取 Activity 實例，請稍後再試")
+                            }
                         }
                         Screen.MfaVerifyLogin -> {
                             // 這裡使用 MFAVerificationScreen，它需要與 PhoneMfaViewModel 和 AuthViewModel 配合
-                            // MFAVerificationScreen 是您之前上傳的文件名
-                            // 您需要將 MFAVerificationScreen.kt 中的 UI 與以下邏輯結合：
-                            // onVerifyCode: 使用 phoneMfaViewModel.smsCodeInput 和 authViewModel.mfaResolver
-                            //             調用 authViewModel.completeMfaSignIn(assertion)
-                            // onResendCode: 可能需要 phoneMfaViewModel 重新觸發 startPhoneNumberVerificationForLogin
-                            com.example.weatherwise.ui.auth.mfa.MFAVerificationLoginScreen( // 假設您創建一個新的 Composable
-                                phoneMfaViewModel = phoneMfaViewModel,
-                                authViewModel = authViewModel,
-                                activity = activity, // 如果重發驗證碼需要
-                                onVerificationSuccess = {
-                                    currentScreen = Screen.WeatherHome // 驗證成功後跳轉
-                                }
-                            )
+                            activity?.let { nonNullActivity ->
+                                com.example.weatherwise.ui.auth.mfa.MFAVerificationLoginScreen(
+                                    phoneMfaViewModel = phoneMfaViewModel,
+                                    authViewModel = authViewModel,
+                                    activity = nonNullActivity,
+                                    onVerificationSuccess = {
+                                        currentScreen = Screen.WeatherHome // 驗證成功後跳轉
+                                    }
+                                )
+                            } ?: run {
+                                Text("無法獲取 Activity 實例，請稍後再試")
+                            }
                         }
                     }
                 }
