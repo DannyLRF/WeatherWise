@@ -1,4 +1,4 @@
-package com.example.weatherwise
+package com.example.weatherwise // Or your correct package
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavType
@@ -6,15 +6,35 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.weatherwise.SettingsScreen
+import com.example.weatherwise.ui.auth.AuthViewModel
+// Make sure all necessary screen composables are imported
+// e.g., import com.example.weatherwise.WeatherMainPage, com.example.weatherwise.CityPage, etc.
+// import com.example.weatherwise.SettingsScreen
+// import com.example.weatherwise.FiveDayForecastPage
+// import com.example.weatherwise.AboutScreen
+
 
 @Composable
-fun WeatherAppNav() {
+fun WeatherAppNavigation(
+    authViewModel: AuthViewModel,
+    navigateToMfaSetup: () -> Unit
+) {
     val navController = rememberNavController()
-    NavHost(navController, startDestination = "main") {
-        composable("main") { WeatherMainPage(navController) }
-        composable("city") { CityPage() }
-        composable("settings") { SettingsScreen(navController = navController) }
+    NavHost(navController, startDestination = "main_weather_dashboard") {
+        composable("main_weather_dashboard") {
+            WeatherMainPage(navController = navController)
+        }
+        composable("city") { // <<< CORRECTED: Was "city_selection", now "city"
+            CityPage()
+        }
+        composable("settings") { // <<< CORRECTED: Was "app_settings", now "settings"
+            SettingsScreen(
+                navController = navController,
+                authViewModel = authViewModel,
+                navigateToMfaSetup = navigateToMfaSetup
+                // SettingsViewModel is typically resolved via viewModel() within SettingsScreen
+            )
+        }
         composable(
             route = "five_day_forecast/{lat}/{lon}",
             arguments = listOf(
@@ -27,9 +47,17 @@ fun WeatherAppNav() {
             FiveDayForecastPage(
                 lat = lat,
                 lon = lon,
-                apiKey = "3a936acc8bb109dcb94017abbc0ec0fb",
+                apiKey = "3a936acc8bb109dcb94017abbc0ec0fb", // Reminder: Secure API key
                 onBack = { navController.popBackStack() }
             )
+        }
+        // This route was "about_app/{page_type}" and SettingsScreen navigated to "about_app/$routeSegment"
+        // If $routeSegment can be "terms_of_service", then page_type is appropriate.
+        composable("about_app/{page_type}") { backStackEntry ->
+            val pageType = backStackEntry.arguments?.getString("page_type") ?: "unknown"
+            // Ensure title transformation matches what AboutScreen expects or how it processes it
+            val title = pageType.replace("_", " ").replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+            AboutScreen(navController = navController, title = title)
         }
     }
 }

@@ -1,19 +1,25 @@
 package com.example.weatherwise
 
+import android.annotation.SuppressLint
+import android.content.Context
+import android.location.Location            // ← 正確的 Location
+import android.util.Log
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.launch
+import com.google.android.gms.location.LocationServices // ← Google Play Services
+import com.google.android.gms.location.Priority
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import org.json.JSONArray
-import org.json.JSONObject
+import kotlin.coroutines.resume                    // ← resume 擴充函式
 import java.time.LocalDate
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.State
 
 class WeatherViewModel : ViewModel() {
+
+    /* ---------- UI 狀態 ---------- */
 
     private val _cityName = mutableStateOf("Loading...")
     val cityName: State<String> = _cityName
@@ -33,21 +39,68 @@ class WeatherViewModel : ViewModel() {
     private val _userLon = mutableStateOf(0.0)
     val userLon: State<Double> = _userLon
 
-    fun loadAllData(context: android.content.Context, apiKey: String) {
-        viewModelScope.launch {
-            val location = getLastKnownLocation(context)
-            location?.let {
-                _userLat.value = it.latitude
-                _userLon.value = it.longitude
+    private val _errorMessage = mutableStateOf<String?>(null)
+    val errorMessage: State<String?> = _errorMessage
 
-                _cityName.value = fetchCityName(it.latitude, it.longitude, apiKey)
-                _weatherData.value = fetchCurrentWeather(it.latitude, it.longitude, apiKey)
-                _hourlyList.value = fetchHourlyWeather(it.latitude, it.longitude, apiKey)
-                _dailyList.value = fetchNextFiveDaysWeather(it.latitude, it.longitude, apiKey)
+    /* ---------- 入口 ---------- */
+
+    fun loadAllData(context: Context, apiKey: String) {
+        viewModelScope.launch {
+            // Reset
+            _cityName.value = "Loading..."
+            _weatherData.value = null
+            _hourlyList.value = emptyList()
+            _dailyList.value = emptyList()
+            _errorMessage.value = null
+
+            Log.d("WeatherViewModel", "Attempting to load all data.")
+            val location = getDeviceLocation(context)
+
+            if (location == null) {
+                _errorMessage.value = "無法取得目前位置，請確認已開啟 GPS 並允許定位權限"
+                return@launch
+            }
+
+            _userLat.value = location.latitude
+            _userLon.value = location.longitude
+            Log.d("WeatherViewModel", "Location: ${location.latitude}, ${location.longitude}")
+
+            try {
+                _cityName.value  = fetchCityName(location.latitude, location.longitude, apiKey)
+                _weatherData.value = fetchCurrentWeather(location.latitude, location.longitude, apiKey)
+                _hourlyList.value = fetchHourlyWeather(location.latitude, location.longitude, apiKey)
+                _dailyList.value  = fetchNextFiveDaysWeather(location.latitude, location.longitude, apiKey)
+                Log.i("WeatherViewModel", "Weather data fetched for ${_cityName.value}")
+            } catch (e: Exception) {
+                Log.e("WeatherViewModel", "Fetch error: ${e.message}", e)
+                _cityName.value = "Error"
+                _errorMessage.value = "無法取得天氣資料，請檢查網路 (${e.javaClass.simpleName})"
             }
         }
     }
 }
+
+/* ---------- 位置 ---------- */
+
+@SuppressLint("MissingPermission")
+private suspend fun getDeviceLocation(context: Context): Location? =
+    suspendCancellableCoroutine { cont ->
+        val fused = LocationServices.getFusedLocationProviderClient(context)
+
+        fused.lastLocation.addOnSuccessListener { last ->
+            if (last != null) {
+                cont.resume(last)
+            } else {
+                fused.getCurrentLocation(
+                    Priority.PRIORITY_HIGH_ACCURACY,
+                    /* cancellationToken = */ null
+                ).addOnSuccessListener { loc -> cont.resume(loc) }
+                    .addOnFailureListener  { _  -> cont.resume(null) }
+            }
+        }.addOnFailureListener { _ ->
+            cont.resume(null)
+        }
+    }
 
 private suspend fun fetchCurrentWeather(lat: Double, lon: Double, apiKey: String): WeatherData {
     val response = withContext(Dispatchers.IO) {
