@@ -31,5 +31,13 @@ fun WeatherAppNav() {
                 onBack = { navController.popBackStack() }
             )
         }
+
+        composable(
+            route = "about/{pageTitle}",
+            arguments = listOf(navArgument("pageTitle") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val title = backStackEntry.arguments?.getString("pageTitle") ?: "About"
+            AboutScreen(navController = navController, title = title)
+        }
     }
 }
