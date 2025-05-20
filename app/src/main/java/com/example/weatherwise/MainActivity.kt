@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.weatherwise.data.repository.AuthRepository
+import com.example.weatherwise.ui.auth.AppNavHost
 import com.example.weatherwise.ui.auth.AuthUiState
 import com.example.weatherwise.ui.auth.AuthViewModel
 import com.example.weatherwise.ui.auth.RegisterScreen
@@ -28,6 +29,30 @@ import com.example.weatherwise.ui.screens.LoginScreen
 import com.example.weatherwise.ui.theme.WeatherWiseTheme
 import com.google.firebase.auth.*
 
+
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val firebaseAuth = FirebaseAuth.getInstance()
+        val authRepository = AuthRepository(firebaseAuth)
+        val authViewModelFactory = AuthViewModel.provideFactory(authRepository)
+
+        setContent {
+            WeatherWiseTheme(darkTheme = true) {
+                val authViewModel: AuthViewModel = viewModel(factory = authViewModelFactory)
+                val phoneMfaViewModel: PhoneMfaViewModel = viewModel()
+
+                AppNavHost(
+                    authViewModel = authViewModel,
+                    phoneMfaViewModel = phoneMfaViewModel
+                )
+            }
+        }
+    }
+}
+/*
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -141,6 +166,10 @@ class MainActivity : ComponentActivity() {
                                 }) {
                                     Text("設定/管理 電話 MFA")
                                 }
+                                Spacer(modifier = Modifier.height(20.dp))
+                                Button(onClick = {  }) {
+                                    Text("Enter")
+                                }
                             }
                         }
                         Screen.MfaSetup -> {
@@ -173,9 +202,12 @@ class MainActivity : ComponentActivity() {
                                 Text("無法獲取 Activity 實例，請稍後再試")
                             }
                         }
+
+
                     }
                 }
             }
         }
     }
 }
+*/
