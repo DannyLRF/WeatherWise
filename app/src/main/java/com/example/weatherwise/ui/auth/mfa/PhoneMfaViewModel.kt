@@ -6,8 +6,6 @@ package com.example.weatherwise.ui.auth.mfa
 import com.google.firebase.auth.PhoneMultiFactorGenerator
 import android.app.Activity
 import android.util.Log
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -59,23 +57,78 @@ class PhoneMfaViewModel : ViewModel() {
     }
 
     // 用於 MFA 設置流程
-    fun startPhoneNumberVerificationForSetup(activity: Activity, fullPhoneNumber: String) {
+    fun startPhoneNumberVerificationForSetup(activity: Activity?, fullPhoneNumber: String) {
         this.mfaLoginSession = null // 確保不是登錄流程
-        initiatePhoneNumberVerification(activity, fullPhoneNumber, null)
+        initiatePhoneNumberVerification(activity, fullPhoneNumber)
     }
 
     // 用於登錄時的 MFA 驗證流程
-    fun startPhoneNumberVerificationForLogin(activity: Activity, session: MultiFactorSession, hintPhoneNumber: String) {
+    fun startPhoneNumberVerificationForLogin(activity: Activity?, session: MultiFactorSession, phoneHint: PhoneMultiFactorInfo) {
         this.mfaLoginSession = session
-        this.phoneNumberInput = hintPhoneNumber // 登錄時通常使用已知的提示號碼
-        initiatePhoneNumberVerification(activity, hintPhoneNumber, session)
+        this.phoneNumberInput = phoneHint.phoneNumber // 登錄時通常使用已知的提示號碼
+
+        // 調用新增的 MFA 專用方法
+        initiateMfaPhoneVerification(activity, session, phoneHint)
+    }
+    // 新增 MFA 專用的驗證方法
+    private fun initiateMfaPhoneVerification(activity: Activity?, session: MultiFactorSession, phoneHint: PhoneMultiFactorInfo) {
+        if (activity == null) {
+            infoMessage = "無法獲取 Activity 實例"
+            return
+        }
+
+        isLoading = true
+        infoMessage = "正在發送驗證碼..."
+        isCodeSent = false
+
+        authCallbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+            // 回調實現保持不變
+            override fun onVerificationCompleted(credential: PhoneAuthCredential) {
+                Log.d(PHONE_MFA_TAG, "onVerificationCompleted:$credential")
+                isLoading = false
+                isCodeSent = true
+                infoMessage = "驗證碼自動獲取成功。"
+                smsCodeInput = credential.smsCode ?: ""
+            }
+
+            override fun onVerificationFailed(e: FirebaseException) {
+                Log.w(PHONE_MFA_TAG, "onVerificationFailed", e)
+                isLoading = false
+                infoMessage = "電話號碼驗證失敗: ${e.message}"
+                isCodeSent = false
+            }
+
+            override fun onCodeSent(verificationId: String, token: PhoneAuthProvider.ForceResendingToken) {
+                Log.d(PHONE_MFA_TAG, "onCodeSent:$verificationId")
+                this@PhoneMfaViewModel.verificationId = verificationId
+                isLoading = false
+                infoMessage = "驗證碼已發送"
+                isCodeSent = true
+            }
+        }
+
+        // 注意：這裡不使用 setPhoneNumber，而是使用 setMultiFactorHint
+        val optionsBuilder = PhoneAuthOptions.newBuilder(firebaseAuth)
+            .setActivity(activity)
+            .setCallbacks(authCallbacks)
+            .setMultiFactorSession(session)
+            .setMultiFactorHint(phoneHint)
+            .setTimeout(60L, TimeUnit.SECONDS)
+
+        PhoneAuthProvider.verifyPhoneNumber(optionsBuilder.build())
     }
 
-    private fun initiatePhoneNumberVerification(activity: Activity, fullPhoneNumber: String, session: MultiFactorSession?) {
+    private fun initiatePhoneNumberVerification(activity: Activity?, fullPhoneNumber: String) {
+        if (activity == null) {
+            infoMessage = "無法獲取 Activity 實例"
+            return
+        }
+
         if (fullPhoneNumber.isBlank()) {
             infoMessage = "請輸入有效的電話號碼。"
             return
         }
+
         isLoading = true
         infoMessage = "正在發送驗證碼..."
         isCodeSent = false
@@ -85,13 +138,11 @@ class PhoneMfaViewModel : ViewModel() {
                 Log.d(PHONE_MFA_TAG, "onVerificationCompleted:$credential")
                 isLoading = false
                 isCodeSent = true
-                if (mfaLoginSession != null) { // 登錄流程中的自動完成
-                    // 不需要用戶輸入 code，直接用 credential 生成 assertion
-                    // 這部分邏輯會在 AuthViewModel 中處理
+
+                if (mfaLoginSession != null) {
                     infoMessage = "驗證碼自動獲取成功。"
-                    smsCodeInput = credential.smsCode ?: "" // 嘗試獲取 code 以便 UI 更新 (可選)
-                    // 通知 AuthViewModel 可以嘗試完成登錄
-                } else { // MFA 設置流程中的自動完成
+                    smsCodeInput = credential.smsCode ?: ""
+                } else {
                     linkCredentialToUserForSetup(credential, "驗證碼自動驗證成功！MFA 已啟用。")
                 }
             }
@@ -118,11 +169,12 @@ class PhoneMfaViewModel : ViewModel() {
             .setActivity(activity)
             .setCallbacks(authCallbacks)
 
-        session?.let {
-            optionsBuilder.setMultiFactorSession(it) // 如果是登錄流程，設置 session
-        }
-
         PhoneAuthProvider.verifyPhoneNumber(optionsBuilder.build())
+//        if (session != null && phoneHint != null) {
+//            optionsBuilder
+//                .setMultiFactorSession(session)
+//                .setMultiFactorHint(phoneHint) // This is the missing part
+//        }
     }
 
     // 用於 MFA 設置流程

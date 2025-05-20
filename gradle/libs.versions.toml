@@ -1,5 +1,5 @@
 [versions]
-agp = "8.10.0"
+agp = "8.8.0"
 appcompat = "1.7.0"
 converterGson = "2.9.0"
 coreKtxVersion = "1.16.0"
@@ -22,6 +22,10 @@ navigationCompose = "2.9.0"
 compose-material = "1.5.0"
 okhttp = "4.10.0"
 retrofit = "2.9.0"
+roomCompiler = "2.6.1"
+roomKtx = "2.7.0"
+roomRuntime = "2.7.0"
+ksp = "2.0.21-1.0.26"
 
 [libraries]
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
@@ -33,6 +37,9 @@ androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-
 androidx-material-icons-core = { module = "androidx.compose.material:material-icons-core", version.ref = "materialIconsCore" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCompiler" }
+androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomKtx" }
+androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 firebase-auth-ktx = { module = "com.google.firebase:firebase-auth-ktx" }
@@ -62,4 +69,5 @@ retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp"}
 
