@@ -1,64 +1,115 @@
 package com.example.weatherwise
 
-import android.app.VoiceInteractor
+import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.*
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import android.Manifest
-import android.location.Location
 import org.json.JSONObject
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.Path
 import java.time.LocalDate
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.unit.Dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 
 @Composable
 fun WeatherMainPage(navController: NavController) {
     val context = LocalContext.current
     val viewModel: WeatherViewModel = viewModel()
 
-    // 页面加载时拉取一次数据
-    LaunchedEffect(Unit) {
-        viewModel.loadAllData(context, "3a936acc8bb109dcb94017abbc0ec0fb")
+    // State for location permission
+    var hasLocationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            hasLocationPermission = isGranted
+            if (isGranted) {
+                Log.d("WeatherMainPage", "ACCESS_FINE_LOCATION permission granted.")
+                viewModel.loadAllData(context, "3a936acc8bb109dcb94017abbc0ec0fb")
+            } else {
+                Log.d("WeatherMainPage", "ACCESS_FINE_LOCATION permission denied.")
+                // Optionally, update ViewModel to reflect permission denial in UI state
+                // viewModel.setError("Location permission denied. Weather data cannot be fetched.")
+                Toast.makeText(context, "Location permission denied. Weather data cannot be fetched.", Toast.LENGTH_LONG).show()
+            }
+        }
+    )
+
+    // Request permission if not already granted
+    LaunchedEffect(key1 = hasLocationPermission) {
+        if (!hasLocationPermission) {
+            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        } else {
+            // If permission was already granted (e.g. from previous session or initial check)
+            viewModel.loadAllData(context, "3a936acc8bb109dcb94017abbc0ec0fb")
+        }
     }
 
     val cityName by viewModel.cityName
@@ -67,8 +118,9 @@ fun WeatherMainPage(navController: NavController) {
     val dailyList by viewModel.dailyList
     val userLat by viewModel.userLat
     val userLon by viewModel.userLon
+    val errorMessage by viewModel.errorMessage // Assuming you add this to your ViewModel
 
-    // 保持你原有的 UI 渲染逻辑，只需要替换使用 viewModel 提供的数据
+    // Main UI
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -76,7 +128,7 @@ fun WeatherMainPage(navController: NavController) {
             .statusBarsPadding()
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        // 顶部栏
+        // Top bar
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -85,13 +137,13 @@ fun WeatherMainPage(navController: NavController) {
             IconButton(onClick = { navController.navigate("city") }) {
                 Icon(Icons.Default.Menu, contentDescription = "City", tint = Color.White)
             }
-
             Text(
                 text = cityName,
                 color = Color.White,
-                fontSize = 18.sp
+                fontSize = 18.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f)
             )
-
             IconButton(onClick = { navController.navigate("settings") }) {
                 Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White)
             }
@@ -99,53 +151,113 @@ fun WeatherMainPage(navController: NavController) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        weatherData?.let { data ->
+        // Content Area
+        if (!hasLocationPermission && cityName == "Loading...") {
+            // UI to show when permission is not granted and we are waiting for user action
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Location permission needed for weather.", color = Color.White, textAlign = TextAlign.Center)
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = { locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) }) {
+                    Text("Grant Permission")
+                }
+            }
+        } else if (cityName == "Loading..." || (weatherData == null && errorMessage == null && hasLocationPermission) ) {
+            // Loading state (either initial or after permission granted but data not yet fetched)
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator(color = Color.White)
+                Text("Fetching weather data...", color = Color.White, modifier = Modifier.padding(top = 16.dp))
+            }
+        } else if (errorMessage != null) {
+            // Error state
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Error: $errorMessage", color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = {
+                    if (hasLocationPermission) {
+                        viewModel.loadAllData(context, "3a936acc8bb109dcb94017abbc0ec0fb")
+                    } else {
+                        locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                    }
+                }) {
+                    Text(if(hasLocationPermission) "Retry" else "Grant Permission & Retry")
+                }
+            }
+        } else if (weatherData != null) {
+            // Display weather data
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "${TemperatureSettings.convertTemp(data.temperature).toInt()}${TemperatureSettings.getUnitSymbol()}",
-                    color = Color.White,
-                    fontSize = 48.sp,
-                    fontWeight = FontWeight.Bold
+                    text = "${TemperatureSettings.convertTemp(weatherData!!.temperature).toInt()}${TemperatureSettings.getUnitSymbol()}",
+                    color = Color.White, fontSize = 48.sp, fontWeight = FontWeight.Bold
                 )
-
                 Spacer(modifier = Modifier.height(8.dp))
 
                 val iconMap = mapOf(
-                    "Clear" to R.drawable.sun_icon,
-                    "Clouds" to R.drawable.cloudy_icon,
-                    "Rain" to R.drawable.rain_icon,
-                    "Snow" to R.drawable.snow_icon,
-                    "Thunderstorm" to R.drawable.thunder_icon
+                    "Clear" to R.drawable.sun_icon, "Clouds" to R.drawable.cloudy_icon,
+                    "Rain" to R.drawable.rain_icon, "Snow" to R.drawable.snow_icon,
+                    "Thunderstorm" to R.drawable.thunder_icon, "Drizzle" to R.drawable.rain_icon, // Example
+                    "Mist" to R.drawable.cloudy_icon // Example
                 )
-                val iconRes = iconMap[data.description] ?: R.drawable.unknown
-
+                val iconRes = iconMap[weatherData!!.description] ?: R.drawable.unknown // Make sure R.drawable.unknown exists
                 Image(
                     painter = painterResource(id = iconRes),
-                    contentDescription = "Weather Icon",
+                    contentDescription = weatherData!!.description,
                     modifier = Modifier.size(100.dp)
                 )
-
                 Spacer(modifier = Modifier.height(8.dp))
-
                 Text(
-                    text = "${data.description}\n↓ ${TemperatureSettings.convertTemp(data.minTemp).toInt()}${TemperatureSettings.getUnitSymbol()} ↑ ${TemperatureSettings.convertTemp(data.maxTemp).toInt()}${TemperatureSettings.getUnitSymbol()}",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    textAlign = TextAlign.Center
+                    text = "${weatherData!!.description}\n↓ ${TemperatureSettings.convertTemp(weatherData!!.minTemp).toInt()}${TemperatureSettings.getUnitSymbol()} ↑ ${TemperatureSettings.convertTemp(weatherData!!.maxTemp).toInt()}${TemperatureSettings.getUnitSymbol()}",
+                    color = Color.White, fontSize = 16.sp, textAlign = TextAlign.Center
                 )
-
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Box(modifier = Modifier.fillMaxWidth()) {
+                if (hourlyList.isNotEmpty()) {
                     HourlyWeatherGraphCombined(hourlyList)
+                } else {
+                    Text("Hourly data unavailable.", color = Color.Gray, modifier = Modifier.padding(vertical = 10.dp))
                 }
 
-                NextThreeDaysWeatherSection(
-                    dailyWeather = dailyList,
-                    onFiveDayClick = {
-                        navController.navigate("five_day_forecast/$userLat/$userLon")
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (dailyList.isNotEmpty()) {
+                    NextThreeDaysWeatherSection(
+                        dailyWeather = dailyList,
+                        onFiveDayClick = {
+                            if (userLat != 0.0 || userLon != 0.0) { // Check if lat/lon are valid
+                                navController.navigate("five_day_forecast/$userLat/$userLon")
+                            } else {
+                                Toast.makeText(context, "Location data not available for forecast.", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    )
+                } else {
+                    Text("5-day forecast unavailable.", color = Color.Gray, modifier = Modifier.padding(vertical = 10.dp))
+                }
+            }
+        } else {
+            // Fallback for unexpected state, though covered by above conditions.
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Weather data is currently unavailable.", color = Color.White, textAlign = TextAlign.Center)
+                if (hasLocationPermission) {
+                    Button(onClick = { viewModel.loadAllData(context, "3a936acc8bb109dcb94017abbc0ec0fb") }) {
+                        Text("Try Again")
                     }
-                )
+                }
             }
         }
     }
