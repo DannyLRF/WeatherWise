@@ -40,6 +40,7 @@ fun SettingsScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         // Top bar
         Box(
@@ -49,7 +50,10 @@ fun SettingsScreen(
         ) {
             IconButton(
                 onClick = { navController.navigateUp() },
-                modifier = Modifier.align(Alignment.CenterStart)
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(top = 4.dp)
+                    .offset(x = (-8).dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
@@ -60,7 +64,7 @@ fun SettingsScreen(
 
             Text(
                 text = "Settings",
-                fontSize = 32.sp,
+                fontSize = 18.sp,
                 color = Color.White,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
@@ -158,7 +162,7 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            navController.navigate("about/$route")
+                            navController.navigate("about/$title")
                         }
                 ) {
                     Row(
@@ -290,6 +294,7 @@ Thank you for helping us improve!
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         // Top
         Box(
@@ -299,7 +304,10 @@ Thank you for helping us improve!
         ) {
             IconButton(
                 onClick = { navController.navigateUp() },
-                modifier = Modifier.align(Alignment.CenterStart)
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(top = 4.dp)
+                    .offset(x = (-8).dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
@@ -319,21 +327,7 @@ Thank you for helping us improve!
             )
         }
 
-        /*
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            Text(
-                text = "This is the $title screen.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = Color.White,
-                textAlign = TextAlign.Center
-            )
-        }
-        */
+
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -344,12 +338,22 @@ Thank you for helping us improve!
             else -> "No content available."
         }
 
-        Text(
-            text = content,
-            color = Color.White,
-            style = MaterialTheme.typography.bodyMedium,
-            lineHeight = 22.sp
-        )
+        Surface(
+            color = Color.DarkGray,
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 4.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = 32.dp, bottom = 8.dp)
+        ) {
+            Text(
+                text = content,
+                color = Color.White,
+                style = MaterialTheme.typography.bodyMedium,
+                lineHeight = 22.sp,
+                modifier = Modifier.padding(16.dp)
+            )
+        }
     }
 
 }
