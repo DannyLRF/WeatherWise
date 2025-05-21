@@ -42,16 +42,25 @@ class PhoneMfaViewModel : ViewModel() {
         checkCurrentUserMfaStatus()
     }
 
-    private fun checkCurrentUserMfaStatus() {
+    fun checkCurrentUserMfaStatus() {
         viewModelScope.launch {
+            // 先重置輸入狀態
+            resetInputState()
+
             val currentUser = firebaseAuth.currentUser
             if (currentUser != null) {
                 val profile = loadUserMfaProfile(currentUser.uid)
                 if (profile?.isPhoneMfaEnabled == true) {
-                    isMfaSuccessfullySetup = true // 標記已設置
-                    this@PhoneMfaViewModel.phoneNumberInput = profile.phoneNumber ?: "" // 顯示已綁定號碼
+                    isMfaSuccessfullySetup = true
+                    this@PhoneMfaViewModel.phoneNumberInput = profile.phoneNumber ?: ""
                     infoMessage = "電話 MFA 已為 ${profile.phoneNumber} 啟用。"
+                } else {
+                    // 如果新用戶沒有 MFA，清除之前的設置狀態
+                    isMfaSuccessfullySetup = false
                 }
+            } else {
+                // 沒有用戶登錄，重置所有內容
+                resetViewModelState()
             }
         }
     }
@@ -291,7 +300,22 @@ class PhoneMfaViewModel : ViewModel() {
             }
         }
     }
-    fun resetMessages() { // 新增：用於清除提示信息
+    fun resetMessages() {
         infoMessage = null
+    }
+
+    // 添加新函數重置輸入相關狀態
+    fun resetInputState() {
+        phoneNumberInput = ""
+        smsCodeInput = ""
+        verificationId = null
+        isCodeSent = false
+        infoMessage = null
+    }
+
+    // 添加完整重置函數
+    fun resetViewModelState() {
+        resetInputState()
+        isMfaSuccessfullySetup = false
     }
 }

@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack // Updated import for ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,15 +21,28 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.weatherwise.viewmodel.SettingsViewModel // ViewModel for app settings (units, etc.)
 import com.example.weatherwise.ui.auth.AuthViewModel // ViewModel for authentication
+import com.example.weatherwise.ui.auth.mfa.PhoneMfaViewModel
 
 @Composable
 fun SettingsScreen(
     navController: NavHostController,
-    settingsViewModel: SettingsViewModel = viewModel(), // Specific ViewModel for UI settings like units
-    authViewModel: AuthViewModel,               // Passed in for auth actions
-    navigateToMfaSetup: () -> Unit          // Callback to navigate to MFA setup
+    settingsViewModel: SettingsViewModel = viewModel(),
+    authViewModel: AuthViewModel,
+    navigateToMfaSetup: () -> Unit,
+    phoneMfaViewModel: PhoneMfaViewModel  // 添加 PhoneMfaViewModel 作為參數
 ) {
     val settings by settingsViewModel.settings.collectAsState()
+    val isMfaEnabled = phoneMfaViewModel.isMfaSuccessfullySetup  // 獲取 MFA 狀態
+
+    // 觀察 MFA 狀態變化
+    LaunchedEffect(phoneMfaViewModel.isMfaSuccessfullySetup) {
+        // 空實現，僅用於觸發重組
+    }
+
+    // 在屏幕顯示時檢查當前用戶的 MFA 狀態
+    LaunchedEffect(Unit) {
+        phoneMfaViewModel.checkCurrentUserMfaStatus()
+    }
 
     val units = listOf("Celsius", "Fahrenheit")
     val windSpeeds = listOf("KM/h", "MPH", "M/s")
@@ -139,20 +154,51 @@ fun SettingsScreen(
                 Text("Security", fontSize = 20.sp, color = Color.White, style = MaterialTheme.typography.titleMedium)
             }
             item {
-                Surface( // Wrap button in Surface for consistent styling if needed, or use Button directly
-                    color = Color.DarkGray, // Match other items
+                Surface(
+                    color = Color.DarkGray,
                     tonalElevation = 2.dp,
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { navigateToMfaSetup() } // Use the passed lambda
+                        .clickable {
+                            if (isMfaEnabled) {
+                                // 直接禁用 MFA
+                                phoneMfaViewModel.disablePhoneMfa()
+                            } else {
+                                // 導航到 MFA 設置頁面
+                                navigateToMfaSetup()
+                            }
+                        }
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), // Standard padding
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween  // 添加水平排列
                     ) {
-                        Text("Setup/Manage Phone MFA", color = Color.White, style = MaterialTheme.typography.bodyLarge)
-                        // Optionally add an icon >
+                        Column {
+                            Text(
+                                text = if (isMfaEnabled) "禁用電話驗證 (MFA)" else "設置電話驗證 (MFA)",
+                                color = Color.White,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+
+                            // 如果 MFA 已啟用，顯示電話號碼信息
+                            if (isMfaEnabled) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "當前已啟用: ${phoneMfaViewModel.phoneNumberInput}",
+                                    color = Color.Gray,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+
+                        // 可選: 添加圖標指示狀態
+                        Icon(
+                            imageVector = if (isMfaEnabled) Icons.Default.Check else Icons.Default.Add,
+                            contentDescription = null,
+                            tint = if (isMfaEnabled) MaterialTheme.colorScheme.primary else Color.White
+                        )
                     }
                 }
             }

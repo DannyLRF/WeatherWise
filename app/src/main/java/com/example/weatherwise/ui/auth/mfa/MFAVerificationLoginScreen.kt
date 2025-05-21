@@ -22,21 +22,23 @@ import com.google.firebase.auth.PhoneMultiFactorGenerator
 fun MFAVerificationLoginScreen(
     phoneMfaViewModel: PhoneMfaViewModel,
     authViewModel: AuthViewModel,
-    activity: Activity, // 如果需要重發驗證碼
+    activity: Activity,
     onVerificationSuccess: () -> Unit
 ) {
     val context = LocalContext.current
-    // 監聽 AuthViewModel 的狀態，如果 MFA 登錄成功，則觸發回調
+
     LaunchedEffect(authViewModel.authUiState.value) {
         if (authViewModel.authUiState.value is AuthUiState.Success) {
+            phoneMfaViewModel.resetInputState() // 更全面的重置
+            // 不要在這裡調用 resetAuthUiState，讓 MainActivity 的 LaunchedEffect 處理
             onVerificationSuccess()
         }
     }
-    // 當 Composable 離開組合時，清除消息
+
     DisposableEffect(Unit) {
         onDispose {
-            phoneMfaViewModel.resetMessages()
-            authViewModel.resetAuthUiState() // 也重置 AuthViewModel 的狀態
+            phoneMfaViewModel.resetInputState() // 更全面的重置
+            // 不要在這裡調用 resetAuthUiState，避免狀態衝突
         }
     }
 

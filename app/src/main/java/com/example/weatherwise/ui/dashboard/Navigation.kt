@@ -7,6 +7,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.weatherwise.ui.auth.AuthViewModel
+import com.example.weatherwise.ui.auth.mfa.PhoneMfaViewModel
+
 // Make sure all necessary screen composables are imported
 // e.g., import com.example.weatherwise.WeatherMainPage, com.example.weatherwise.CityPage, etc.
 // import com.example.weatherwise.SettingsScreen
@@ -17,22 +19,22 @@ import com.example.weatherwise.ui.auth.AuthViewModel
 @Composable
 fun WeatherAppNavigation(
     authViewModel: AuthViewModel,
-    navigateToMfaSetup: () -> Unit
+    navigateToMfaSetup: () -> Unit,
+    phoneMfaViewModel: PhoneMfaViewModel  // 新增這個參數
 ) {
     val navController = rememberNavController()
     NavHost(navController, startDestination = "main_weather_dashboard") {
         composable("main_weather_dashboard") {
             WeatherMainPage(navController = navController)
         }
-        composable("city") { // <<< CORRECTED: Was "city_selection", now "city"
-            CityPage()
-        }
-        composable("settings") { // <<< CORRECTED: Was "app_settings", now "settings"
+        // 其他 composable 保持不變...
+
+        composable("settings") {
             SettingsScreen(
                 navController = navController,
                 authViewModel = authViewModel,
-                navigateToMfaSetup = navigateToMfaSetup
-                // SettingsViewModel is typically resolved via viewModel() within SettingsScreen
+                navigateToMfaSetup = navigateToMfaSetup,
+                phoneMfaViewModel = phoneMfaViewModel  // 傳遞給 SettingsScreen
             )
         }
         composable(
