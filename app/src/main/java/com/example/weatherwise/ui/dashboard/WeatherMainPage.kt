@@ -78,11 +78,43 @@ import java.time.LocalDate
 fun WeatherMainPage(navController: NavController) {
     val context = LocalContext.current
     val viewModel: WeatherViewModel = viewModel()
+    val hasLoaded = remember { mutableStateOf(false) }
 
+    LaunchedEffect(Unit) {
+        if (!hasLoaded.value) {
+            viewModel.loadAllData(context, "79a25643aff43a2dbd3f03165be96f1a")
+            hasLoaded.value = true
+        }
+    }
+    WeatherContentUI(viewModel, navController) // 👈 共用 UI 部分
+}
+
+
+@Composable
+fun WeatherMainPage(lat: Double, lon: Double, navController: NavController) {
+    val context = LocalContext.current
+    val viewModel: WeatherViewModel = viewModel()
+    val hasLoaded = remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        if (!hasLoaded.value) {
+            viewModel.loadAllDataByCoords(lat, lon, context, "79a25643aff43a2dbd3f03165be96f1a")
+            hasLoaded.value = true
+        }
+    }
+    WeatherContentUI(viewModel, navController) // 👈 同样共用 UI 部分
+}
+
+@Composable
+fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController) {
+    val context = LocalContext.current
     // State for location permission
     var hasLocationPermission by remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
         )
     }
 
@@ -97,7 +129,11 @@ fun WeatherMainPage(navController: NavController) {
                 Log.d("WeatherMainPage", "ACCESS_FINE_LOCATION permission denied.")
                 // Optionally, update ViewModel to reflect permission denial in UI state
                 // viewModel.setError("Location permission denied. Weather data cannot be fetched.")
-                Toast.makeText(context, "Location permission denied. Weather data cannot be fetched.", Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    context,
+                    "Location permission denied. Weather data cannot be fetched.",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     )
@@ -159,13 +195,17 @@ fun WeatherMainPage(navController: NavController) {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Location permission needed for weather.", color = Color.White, textAlign = TextAlign.Center)
+                Text(
+                    "Location permission needed for weather.",
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(onClick = { locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) }) {
                     Text("Grant Permission")
                 }
             }
-        } else if (cityName == "Loading..." || (weatherData == null && errorMessage == null && hasLocationPermission) ) {
+        } else if (cityName == "Loading..." || (weatherData == null && errorMessage == null && hasLocationPermission)) {
             // Loading state (either initial or after permission granted but data not yet fetched)
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -173,7 +213,11 @@ fun WeatherMainPage(navController: NavController) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 CircularProgressIndicator(color = Color.White)
-                Text("Fetching weather data...", color = Color.White, modifier = Modifier.padding(top = 16.dp))
+                Text(
+                    "Fetching weather data...",
+                    color = Color.White,
+                    modifier = Modifier.padding(top = 16.dp)
+                )
             }
         } else if (errorMessage != null) {
             // Error state
@@ -182,7 +226,11 @@ fun WeatherMainPage(navController: NavController) {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Error: $errorMessage", color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
+                Text(
+                    "Error: $errorMessage",
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(onClick = {
                     if (hasLocationPermission) {
@@ -191,25 +239,34 @@ fun WeatherMainPage(navController: NavController) {
                         locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                     }
                 }) {
-                    Text(if(hasLocationPermission) "Retry" else "Grant Permission & Retry")
+                    Text(if (hasLocationPermission) "Retry" else "Grant Permission & Retry")
                 }
             }
         } else if (weatherData != null) {
             // Display weather data
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text(
-                    text = "${TemperatureSettings.convertTemp(weatherData!!.temperature).toInt()}${TemperatureSettings.getUnitSymbol()}",
+                    text = "${
+                        TemperatureSettings.convertTemp(weatherData!!.temperature).toInt()
+                    }${TemperatureSettings.getUnitSymbol()}",
                     color = Color.White, fontSize = 48.sp, fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
                 val iconMap = mapOf(
-                    "Clear" to R.drawable.sun_icon, "Clouds" to R.drawable.cloudy_icon,
-                    "Rain" to R.drawable.rain_icon, "Snow" to R.drawable.snow_icon,
-                    "Thunderstorm" to R.drawable.thunder_icon, "Drizzle" to R.drawable.rain_icon, // Example
+                    "Clear" to R.drawable.sun_icon,
+                    "Clouds" to R.drawable.cloudy_icon,
+                    "Rain" to R.drawable.rain_icon,
+                    "Snow" to R.drawable.snow_icon,
+                    "Thunderstorm" to R.drawable.thunder_icon,
+                    "Drizzle" to R.drawable.rain_icon, // Example
                     "Mist" to R.drawable.cloudy_icon // Example
                 )
-                val iconRes = iconMap[weatherData!!.description] ?: R.drawable.unknown // Make sure R.drawable.unknown exists
+                val iconRes = iconMap[weatherData!!.description]
+                    ?: R.drawable.unknown // Make sure R.drawable.unknown exists
                 Image(
                     painter = painterResource(id = iconRes),
                     contentDescription = weatherData!!.description,
@@ -217,7 +274,15 @@ fun WeatherMainPage(navController: NavController) {
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "${weatherData!!.description}\n↓ ${TemperatureSettings.convertTemp(weatherData!!.minTemp).toInt()}${TemperatureSettings.getUnitSymbol()} ↑ ${TemperatureSettings.convertTemp(weatherData!!.maxTemp).toInt()}${TemperatureSettings.getUnitSymbol()}",
+                    text = "${weatherData!!.description}\n↓ ${
+                        TemperatureSettings.convertTemp(
+                            weatherData!!.minTemp
+                        ).toInt()
+                    }${TemperatureSettings.getUnitSymbol()} ↑ ${
+                        TemperatureSettings.convertTemp(
+                            weatherData!!.maxTemp
+                        ).toInt()
+                    }${TemperatureSettings.getUnitSymbol()}",
                     color = Color.White, fontSize = 16.sp, textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(24.dp))
@@ -225,7 +290,11 @@ fun WeatherMainPage(navController: NavController) {
                 if (hourlyList.isNotEmpty()) {
                     HourlyWeatherGraphCombined(hourlyList)
                 } else {
-                    Text("Hourly data unavailable.", color = Color.Gray, modifier = Modifier.padding(vertical = 10.dp))
+                    Text(
+                        "Hourly data unavailable.",
+                        color = Color.Gray,
+                        modifier = Modifier.padding(vertical = 10.dp)
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -237,12 +306,20 @@ fun WeatherMainPage(navController: NavController) {
                             if (userLat != 0.0 || userLon != 0.0) { // Check if lat/lon are valid
                                 navController.navigate("five_day_forecast/$userLat/$userLon")
                             } else {
-                                Toast.makeText(context, "Location data not available for forecast.", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    "Location data not available for forecast.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         }
                     )
                 } else {
-                    Text("5-day forecast unavailable.", color = Color.Gray, modifier = Modifier.padding(vertical = 10.dp))
+                    Text(
+                        "5-day forecast unavailable.",
+                        color = Color.Gray,
+                        modifier = Modifier.padding(vertical = 10.dp)
+                    )
                 }
             }
         } else {
@@ -252,9 +329,18 @@ fun WeatherMainPage(navController: NavController) {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Weather data is currently unavailable.", color = Color.White, textAlign = TextAlign.Center)
+                Text(
+                    "Weather data is currently unavailable.",
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
                 if (hasLocationPermission) {
-                    Button(onClick = { viewModel.loadAllData(context, "3a936acc8bb109dcb94017abbc0ec0fb") }) {
+                    Button(onClick = {
+                        viewModel.loadAllData(
+                            context,
+                            "3a936acc8bb109dcb94017abbc0ec0fb"
+                        )
+                    }) {
                         Text("Try Again")
                     }
                 }
@@ -789,3 +875,5 @@ fun TemperatureTrendGraph(data: List<DailyWeather>, itemWidth: Dp) {
         }
     }
 }
+
+

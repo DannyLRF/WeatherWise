@@ -28,6 +28,7 @@ import androidx.navigation.NavController
 import com.example.weatherwise.ui.dashboard.CityInfo
 import com.example.weatherwise.ui.dashboard.CityViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import java.net.URLEncoder
 
 @Composable
 fun CityScreen(navController: NavController, viewModel: CityViewModel = viewModel()) {
@@ -55,7 +56,7 @@ fun CityScreen(navController: NavController, viewModel: CityViewModel = viewMode
                     .clickable { navController.popBackStack() } // ✅ 返回上一页
             )
             Text(
-                text = "Location",
+                text = "City",
                 color = Color.White,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
@@ -108,8 +109,8 @@ fun CityScreen(navController: NavController, viewModel: CityViewModel = viewMode
         LazyColumn {
             items(cities) { city ->
                 CityItem(city = city) {
-                    // ✅ 点击城市跳转到 MainPage，传城市名参数
-                    navController.navigate("main_page/${city.name}")
+                    //  click city item to MainPage
+                    navController.navigate("main_page/${city.lat}/${city.lon}")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -130,8 +131,8 @@ fun CityItem(city: CityInfo, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
-            Text(city.name, color = Color.White, fontSize = 18.sp)
-            Text(city.description, color = Color.Gray, fontSize = 14.sp)
+                Text(city.name, color = Color.White, fontSize = 18.sp)
+                Text(city.description, color = Color.Gray, fontSize = 14.sp)
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {

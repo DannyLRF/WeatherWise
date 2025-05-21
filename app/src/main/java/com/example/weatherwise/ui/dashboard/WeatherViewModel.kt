@@ -78,6 +78,33 @@ class WeatherViewModel : ViewModel() {
             }
         }
     }
+
+    fun loadAllDataByCoords(lat: Double, lon: Double, context: Context, apiKey: String) {
+        viewModelScope.launch {
+            // Reset
+            _cityName.value = "Loading..."
+            _weatherData.value = null
+            _hourlyList.value = emptyList()
+            _dailyList.value = emptyList()
+            _errorMessage.value = null
+
+            _userLat.value = lat
+            _userLon.value = lon
+
+            try {
+                _cityName.value  = fetchCityName(lat, lon, apiKey)
+                _weatherData.value = fetchCurrentWeather(lat, lon, apiKey)
+                _hourlyList.value = fetchHourlyWeather(lat, lon, apiKey)
+                _dailyList.value  = fetchNextFiveDaysWeather(lat, lon, apiKey)
+                Log.i("WeatherViewModel", "Weather data fetched for ${_cityName.value}")
+            } catch (e: Exception) {
+                Log.e("WeatherViewModel", "Fetch error: ${e.message}", e)
+                _cityName.value = "Error"
+                _errorMessage.value = "Failed to load weather: (${e.javaClass.simpleName})"
+            }
+        }
+    }
+
 }
 
 /* ---------- 位置 ---------- */
