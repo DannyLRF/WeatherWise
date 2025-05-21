@@ -38,12 +38,17 @@ import com.google.firebase.auth.FirebaseAuth
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PhoneMfaSetupScreen(
-    phoneMfaViewModel: PhoneMfaViewModel, // 直接使用 PhoneMfaViewModel
+    phoneMfaViewModel: PhoneMfaViewModel,
     activity: Activity,
-    onMfaSetupComplete: () -> Unit // 新增回調，用於設置完成後導航
+    onMfaSetupComplete: () -> Unit
 ) {
     val currentUser = FirebaseAuth.getInstance().currentUser
     LocalContext.current
+
+    // 添加 LaunchedEffect 在屏幕顯示時檢查當前用戶狀態
+    LaunchedEffect(Unit) {
+        phoneMfaViewModel.checkCurrentUserMfaStatus()
+    }
 
     // 監聽 isMfaSuccessfullySetup 的變化，以便在設置/禁用成功後執行回調
     LaunchedEffect(phoneMfaViewModel.isMfaSuccessfullySetup, phoneMfaViewModel.infoMessage) {
@@ -59,7 +64,7 @@ fun PhoneMfaSetupScreen(
     // 當 Composable 離開組合時，清除消息，避免下次進入時顯示舊消息
     DisposableEffect(Unit) {
         onDispose {
-            phoneMfaViewModel.resetMessages()
+            phoneMfaViewModel.resetInputState()
         }
     }
 

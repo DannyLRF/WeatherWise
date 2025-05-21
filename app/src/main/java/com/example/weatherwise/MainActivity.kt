@@ -57,11 +57,11 @@ class MainActivity : ComponentActivity() {
                     when (val state = authState) {
                         is AuthUiState.Success -> {
                             if (state.user != null) {
-                                // On successful login/MFA, go to WeatherHome (which now hosts WeatherAppNavigation)
-                                currentScreen = Screen.WeatherHome
+                                // 成功登錄後，回到主屏幕
+                                currentScreen = Screen.WeatherHome // 設置為主屏幕，不要直接導航到子目標
                                 Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
                                 authViewModel.resetAuthUiState()
-                                phoneMfaViewModel.resetMessages()
+                                phoneMfaViewModel.resetInputState() // 使用完整的重置
                             }
                         }
                         is AuthUiState.Error -> {
@@ -127,9 +127,10 @@ class MainActivity : ComponentActivity() {
                             WeatherAppNavigation(
                                 authViewModel = authViewModel,
                                 navigateToMfaSetup = {
-                                    phoneMfaViewModel.resetMessages() // Reset messages before navigating
+                                    phoneMfaViewModel.resetMessages() // 重置消息
                                     currentScreen = Screen.MfaSetup
-                                }
+                                },
+                                phoneMfaViewModel = phoneMfaViewModel  // 新增這個參數
                             )
                         }
                         Screen.MfaSetup -> {
