@@ -41,9 +41,11 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,6 +69,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import com.example.weatherwise.viewmodel.SettingsViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -222,6 +226,28 @@ fun WeatherMainPage(navController: NavController) {
                 )
                 Spacer(modifier = Modifier.height(24.dp))
 
+                //Show notifications if switch open
+                val settingsViewModel: SettingsViewModel = viewModel() //
+
+                val settings by settingsViewModel.settings.collectAsState()
+                var showReminder by remember { mutableStateOf(true) }
+
+                if (settings.weatherNotifications && showReminder) {
+                    //Text("notification used", color = Color.Green)
+                    Button(
+                    onClick = {
+                        showReminder = false
+                    },
+
+                    modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("⚠️ Bad weather")
+
+                      }
+                    }
+
+
+
                 if (hourlyList.isNotEmpty()) {
                     HourlyWeatherGraphCombined(hourlyList)
                 } else {
@@ -289,7 +315,7 @@ data class WeatherData(
 )
 
 data class HourlyWeather(
-    val time: String,         // 格式如 "15:00"
+    val time: String,         //
     val temperature: Double,
     val icon: String,
     val description: String
@@ -299,8 +325,10 @@ data class HourlyWeather(
 fun HourlyWeatherGraphCombined(hourlyList: List<HourlyWeather>) {
     if (hourlyList.isEmpty()) return
 
-    val maxTemp = hourlyList.maxOf { it.temperature }
-    val minTemp = hourlyList.minOf { it.temperature }
+    val convertedTemps = hourlyList.map { TemperatureSettings.convertTemp(it.temperature) }
+
+    val maxTemp = convertedTemps.max()
+    val minTemp = convertedTemps.min()
     val tempRange = (maxTemp - minTemp).coerceAtLeast(1.0)
 
     val graphHeight = 160.dp // 增高图形区域，避免上下重叠
@@ -312,7 +340,7 @@ fun HourlyWeatherGraphCombined(hourlyList: List<HourlyWeather>) {
             .fillMaxWidth()
             .padding(vertical = 8.dp)
     ) {
-        // 图标 + 温度行
+        // Icon + temperature
         Row(
             modifier = Modifier
                 .horizontalScroll(scrollState)
@@ -335,7 +363,7 @@ fun HourlyWeatherGraphCombined(hourlyList: List<HourlyWeather>) {
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "${hour.temperature.toInt()}°",
+                        text = "${TemperatureSettings.convertTemp(hour.temperature).toInt()}${TemperatureSettings.getUnitSymbol()}" ,//"${hour.temperature.toInt()}°",
                         color = Color.White,
                         fontSize = 14.sp
                     )
@@ -345,7 +373,7 @@ fun HourlyWeatherGraphCombined(hourlyList: List<HourlyWeather>) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 曲线图
+        // Line chart
         Row(
             modifier = Modifier
                 .horizontalScroll(scrollState)
@@ -362,13 +390,13 @@ fun HourlyWeatherGraphCombined(hourlyList: List<HourlyWeather>) {
                 val bottomPadding = 20.dp.toPx()
                 val usableHeight = size.height - topPadding - bottomPadding
 
-                val points = hourlyList.mapIndexed { index, hour ->
+                val points = convertedTemps.mapIndexed { index, temp ->
                     val x = spacing * index + halfSpacing
-                    val y = topPadding + usableHeight * (1 - (hour.temperature - minTemp) / tempRange)
+                    val y = topPadding + usableHeight * (1 - (temp - minTemp) / tempRange)
                     Offset(x.toFloat(), y.toFloat())
                 }
 
-                // 曲线
+                // Line
                 val path = Path().apply {
                     moveTo(points[0].x, points[0].y)
                     for (i in 1 until points.size) {
@@ -385,7 +413,7 @@ fun HourlyWeatherGraphCombined(hourlyList: List<HourlyWeather>) {
                     style = Stroke(width = 4f)
                 )
 
-                // 圆点 + 温度
+                // point + temperature
                 points.forEachIndexed { index, point ->
                     drawCircle(
                         color = Color.Cyan,
@@ -394,7 +422,7 @@ fun HourlyWeatherGraphCombined(hourlyList: List<HourlyWeather>) {
                     )
                     drawIntoCanvas { canvas ->
                         canvas.nativeCanvas.drawText(
-                            "${hourlyList[index].temperature.toInt()}°",
+                            "${convertedTemps[index].toInt()}${TemperatureSettings.getUnitSymbol()}",
                             point.x,
                             point.y - 10f,
                             android.graphics.Paint().apply {
@@ -411,7 +439,7 @@ fun HourlyWeatherGraphCombined(hourlyList: List<HourlyWeather>) {
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        // 时间标签行
+        // time
         Row(
             modifier = Modifier
                 .horizontalScroll(scrollState)
@@ -435,7 +463,7 @@ fun HourlyWeatherGraphCombined(hourlyList: List<HourlyWeather>) {
 data class DailyWeather(
     val date: String,           // yyyy-MM-dd
     val dayLabel: String,       // Today, Mon, Tue...
-    val currentTemp: Double,    // 当前温度（取中午的）
+    val currentTemp: Double,    // current temperature
     val maxTemp: Double,
     val minTemp: Double,
     val description: String,
@@ -487,7 +515,7 @@ fun NextThreeDaysWeatherSection(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = "↑${day.maxTemp.toInt()}° ↓${day.minTemp.toInt()}°",
+                        text = "↑${TemperatureSettings.convertTemp(day.maxTemp).toInt()}${TemperatureSettings.getUnitSymbol()} ↓${TemperatureSettings.convertTemp(day.minTemp).toInt()}${TemperatureSettings.getUnitSymbol()}",
                         color = Color.White,
                         fontSize = 12.sp
                     )
@@ -648,7 +676,7 @@ fun FiveDayForecastPage(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // 日期
+                        // date
                         Text(
                             text = day.dayLabel,
                             color = Color.Black,
@@ -656,7 +684,7 @@ fun FiveDayForecastPage(
                             modifier = Modifier.weight(1f)
                         )
 
-                        // 图标
+                        // icon
                         val iconRes = when (day.icon) {
                             "Clear" -> R.drawable.sun_icon
                             "Clouds" -> R.drawable.cloudy_icon
@@ -672,15 +700,15 @@ fun FiveDayForecastPage(
                                 .weight(1f)
                         )
 
-                        // 温度
+                        // temperature
                         Text(
-                            text = "↑${day.maxTemp.toInt()}° ↓${day.minTemp.toInt()}°",
+                            text = "↑${TemperatureSettings.convertTemp(day.maxTemp).toInt()}${TemperatureSettings.getUnitSymbol()} ↓${TemperatureSettings.convertTemp(day.minTemp).toInt()}${TemperatureSettings.getUnitSymbol()}",
                             color = Color.Black,
                             fontSize = 14.sp,
                             modifier = Modifier.weight(2f)
                         )
 
-                        // 风速
+                        // wind speed
                         Text(
                             text = "💨 ${day.windSpeed} m/s",
                             color = Color.DarkGray,
@@ -688,7 +716,7 @@ fun FiveDayForecastPage(
                             modifier = Modifier.weight(2f)
                         )
 
-                        // 湿度
+                        // humidity
                         Text(
                             text = "💧 ${day.humidity}%",
                             color = Color.DarkGray,
@@ -787,5 +815,23 @@ fun TemperatureTrendGraph(data: List<DailyWeather>, itemWidth: Dp) {
                 )
             }
         }
+    }
+}
+
+
+
+
+@Composable
+fun WarningBanner(message: String) {
+    Surface(
+        color = Color.Red,
+        modifier = Modifier.fillMaxWidth(),
+        shadowElevation = 4.dp
+    ) {
+        Text(
+            text = message,
+            color = Color.White,
+            modifier = Modifier.padding(16.dp)
+        )
     }
 }
