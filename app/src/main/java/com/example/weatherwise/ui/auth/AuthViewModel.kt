@@ -20,6 +20,10 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
     private val _currentUser = MutableStateFlow(authRepository.getCurrentUser())
     val currentUser: StateFlow<FirebaseUser?> = _currentUser.asStateFlow()
 
+    // Get userId for current user
+    val currentUserId: String?
+        get() = currentUser.value?.uid
+
     // 用於存儲 MFA 流程中的 MultiFactorResolver
     var mfaResolver: MultiFactorResolver? = null
     var mfaHints: List<MultiFactorInfo>? = null

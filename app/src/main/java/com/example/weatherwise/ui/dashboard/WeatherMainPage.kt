@@ -74,41 +74,45 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.time.LocalDate
 
+// This is for navigation to main page
 @Composable
-fun WeatherMainPage(navController: NavController) {
+fun WeatherMainPage(navController: NavController, userId: String ) {
     val context = LocalContext.current
     val viewModel: WeatherViewModel = viewModel()
     val hasLoaded = remember { mutableStateOf(false) }
 
+    // Load data only once when the composable is first composed
     LaunchedEffect(Unit) {
         if (!hasLoaded.value) {
             viewModel.loadAllData(context, "79a25643aff43a2dbd3f03165be96f1a")
             hasLoaded.value = true
         }
     }
-    WeatherContentUI(viewModel, navController) // 👈 共用 UI 部分
+    WeatherContentUI(viewModel, navController, userId ) // Shared UI content function
 }
 
-
+// This is for navigation to city selected
 @Composable
-fun WeatherMainPage(lat: Double, lon: Double, navController: NavController) {
+fun WeatherMainPage(lat: Double, lon: Double, navController: NavController, userId: String ) {
     val context = LocalContext.current
     val viewModel: WeatherViewModel = viewModel()
     val hasLoaded = remember { mutableStateOf(false) }
 
+    // Load data for the given coordinates only once
     LaunchedEffect(Unit) {
         if (!hasLoaded.value) {
             viewModel.loadAllDataByCoords(lat, lon, context, "79a25643aff43a2dbd3f03165be96f1a")
             hasLoaded.value = true
         }
     }
-    WeatherContentUI(viewModel, navController) // 👈 同样共用 UI 部分
+    WeatherContentUI(viewModel, navController, userId) // Shared UI content function
 }
 
 @Composable
-fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController) {
+fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController, userId: String ) {
     val context = LocalContext.current
-    // State for location permission
+
+    // Permission state for location access
     var hasLocationPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -118,6 +122,7 @@ fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController) 
         )
     }
 
+    // Launcher to request location permission
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
@@ -143,11 +148,13 @@ fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController) 
         if (!hasLocationPermission) {
             locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         } else {
+
             // If permission was already granted (e.g. from previous session or initial check)
             viewModel.loadAllData(context, "3a936acc8bb109dcb94017abbc0ec0fb")
         }
     }
 
+    // Observing states from ViewModel
     val cityName by viewModel.cityName
     val weatherData by viewModel.weatherData
     val hourlyList by viewModel.hourlyList
@@ -170,7 +177,7 @@ fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController) 
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = { navController.navigate("city") }) {
+            IconButton(onClick = {  navController.navigate("city/$userId") }) {
                 Icon(Icons.Default.Menu, contentDescription = "City", tint = Color.White)
             }
             Text(
@@ -189,6 +196,7 @@ fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController) 
 
         // Content Area
         if (!hasLocationPermission && cityName == "Loading...") {
+
             // UI to show when permission is not granted and we are waiting for user action
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -206,6 +214,7 @@ fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController) 
                 }
             }
         } else if (cityName == "Loading..." || (weatherData == null && errorMessage == null && hasLocationPermission)) {
+
             // Loading state (either initial or after permission granted but data not yet fetched)
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -243,6 +252,7 @@ fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController) 
                 }
             }
         } else if (weatherData != null) {
+
             // Display weather data
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
