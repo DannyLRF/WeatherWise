@@ -241,7 +241,7 @@ fun WeatherMainPage(navController: NavController) {
 
                     modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("⚠️ Bad weather")
+                        Text("Weather Notification")
 
                       }
                     }
@@ -521,7 +521,7 @@ fun NextThreeDaysWeatherSection(
                     )
 
                     Text(
-                        text = "💨${day.windSpeed} m/s",
+                        text = "💨${WindSpeedSettings.formatSpeed(day.windSpeed)}",
                         color = Color.Gray,
                         fontSize = 10.sp
                     )
@@ -710,7 +710,7 @@ fun FiveDayForecastPage(
 
                         // wind speed
                         Text(
-                            text = "💨 ${day.windSpeed} m/s",
+                            text = "💨 ${WindSpeedSettings.formatSpeed(day.windSpeed)}",
                             color = Color.DarkGray,
                             fontSize = 12.sp,
                             modifier = Modifier.weight(2f)

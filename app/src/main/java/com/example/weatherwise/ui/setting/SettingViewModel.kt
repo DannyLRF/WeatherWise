@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.weatherwise.Settings
 import com.example.weatherwise.TemperatureSettings
 import com.example.weatherwise.TemperatureUnit
+import com.example.weatherwise.WindSpeedSettings
+import com.example.weatherwise.WindSpeedUnit
 
 import com.example.weatherwise.data.SettingsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,7 +50,16 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                     "Fahrenheit" -> TemperatureUnit.FAHRENHEIT
                     else -> TemperatureUnit.CELSIUS
                 }
+
+                WindSpeedSettings.currentUnit = when (currentSettings.windSpeed) {
+                    "M/s" -> WindSpeedUnit.METER_PER_SECOND
+                    "KM/h" -> WindSpeedUnit.KILOMETER_PER_HOUR
+                    "MPH" -> WindSpeedUnit.MILES_PER_HOUR
+                    else -> WindSpeedUnit.METER_PER_SECOND
+                }
             }
+
+
         }
     }
 
