@@ -243,11 +243,11 @@ fun CityItem(
             // Right box: icon and temperature
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(modifier = Modifier.width(64.dp)) {
-                    Image(
-                        painter = painterResource(id = city.iconResId),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp) // Weather icon
-                    )
+                    // Image(
+                    //     painter = painterResource(id = city.iconResId),
+                    //     contentDescription = null,
+                    //     modifier = Modifier.size(24.dp) // Weather icon
+                    // )
                     Text(
                         "${city.temperature}°",
                         color = Color.White,
