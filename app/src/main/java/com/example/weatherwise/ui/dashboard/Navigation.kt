@@ -5,14 +5,18 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.weatherwise.ui.auth.AuthUiState
 import com.example.weatherwise.ui.auth.AuthViewModel
 import com.example.weatherwise.ui.auth.mfa.PhoneMfaViewModel
+import com.example.weatherwise.ui.screens.LoginScreen
 
 
 /**
@@ -42,10 +46,10 @@ fun WeatherAppNavigation(
             if (userId != null) {
                 DashboardPage(navController = navController, userId = userId)
             } else {
-                // ✅ 弹出错误提示
+                // ✅ Error
                 Toast.makeText(context, "Please log in to continue", Toast.LENGTH_SHORT).show()
 
-                // ✅ 跳转到登录页
+                // ✅ To log in
                 LaunchedEffect(Unit) {
                     navController.navigate("login") {
                         popUpTo("main_weather_dashboard") { inclusive = true } // 可选：清除栈
@@ -136,6 +140,23 @@ fun WeatherAppNavigation(
             // Format the title from the URL-friendly string
             val title = pageType.replace("_", " ").replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
             AboutScreen(navController = navController, title = title)
+        }
+
+        // ✅ 添加 login 路由
+        composable("login") {
+            LoginScreen(
+                onLoginClick = { email, password ->
+                    authViewModel.login(email, password)
+                },
+                onGoogleSignInClick = {
+                    // 處理註冊或 Google 登入
+                    // 根據按鈕文字顯示的是 "register"，可能需要導航到註冊頁面
+                    // 或者實現 Google 登入邏輯
+                },
+                onForgotPasswordClick = {
+                    // 處理忘記密碼
+                }
+            )
         }
     }
 }

@@ -119,6 +119,9 @@ class MainActivity : ComponentActivity() {
                             RegisterScreen(
                                 onRegisterClick = { email, password ->
                                     authViewModel.register(email, password)
+                                },
+                                onBackClick = {
+                                    currentScreen = Screen.Login
                                 }
                             )
                         }

@@ -24,7 +24,7 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
     val currentUserId: String?
         get() = currentUser.value?.uid
 
-    // 用於存儲 MFA 流程中的 MultiFactorResolver
+    // Store MFA  MultiFactorResolver
     var mfaResolver: MultiFactorResolver? = null
     var mfaHints: List<MultiFactorInfo>? = null
 
@@ -46,15 +46,18 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
                 mfaResolver = result.resolver
                 mfaHints = result.hints
             }
-            _authUiState.value = result // 將結果（包括 MfaRequired）暴露給 UI
-            // Success 狀態的 currentUser 更新將在 signInWithMfaAssertion 成功後進行
+            _authUiState.value = result
+
+            if (result is AuthUiState.Success) {
+                _currentUser.value = result.user
+            }
         }
     }
 
     fun completeMfaSignIn(assertion: MultiFactorAssertion) {
         val currentResolver = mfaResolver
         if (currentResolver == null) {
-            _authUiState.value = AuthUiState.Error("MFA 流程錯誤：Resolver 未找到")
+            _authUiState.value = AuthUiState.Error("MFA Process Error：Resolver not found")
             return
         }
         viewModelScope.launch {
@@ -63,7 +66,7 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
             _authUiState.value = result
             if (result is AuthUiState.Success) {
                 _currentUser.value = result.user
-                mfaResolver = null // 清理 resolver
+                mfaResolver = null // Clean resolver
                 mfaHints = null
             }
         }
@@ -73,12 +76,12 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
         authRepository.logoutUser()
         _currentUser.value = null
         _authUiState.value = AuthUiState.Idle
-        mfaResolver = null // 清理 resolver
+        mfaResolver = null // Clean resolver
         mfaHints = null
     }
 
     fun resetAuthUiState() {
-        if (_authUiState.value !is AuthUiState.MfaRequired) { // 避免在MFA流程中重置
+        if (_authUiState.value !is AuthUiState.MfaRequired) { // Avoid reset
             _authUiState.value = AuthUiState.Idle
         }
     }

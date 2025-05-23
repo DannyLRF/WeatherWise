@@ -34,6 +34,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -42,12 +43,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -237,24 +240,42 @@ fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController, 
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-        //Show notifications if switch open
-        val settingsViewModel: SettingsViewModel = viewModel() //
-
+        val settingsViewModel: SettingsViewModel = viewModel()
         val settings by settingsViewModel.settings.collectAsState()
-        var showReminder by remember { mutableStateOf(true) }
+        var showReminder by rememberSaveable { mutableStateOf(true) }
 
-        if (settings.weatherNotifications && showReminder) {
-            //Text("notification used", color = Color.Green)
-            Button(
-                onClick = {
-                    showReminder = false
-                },
+        if (settings.weatherNotifications && showReminder && weatherData != null) {
+            // 根据设置转换温度
+            val rawTemp = weatherData!!.temperature
+            val temp = TemperatureSettings.convertTemp(rawTemp)
 
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Weather Notification")
-
+            val isGoodWeather = when (TemperatureSettings.currentUnit) {
+                TemperatureUnit.CELSIUS -> temp in 18.0..25.0
+                TemperatureUnit.FAHRENHEIT -> temp in 64.0..77.0
             }
+
+            val message = if (isGoodWeather) "✅ Good weather" else "⚠️ Bad weather"
+
+            AlertDialog(
+                onDismissRequest = { showReminder = false },
+                title = {
+                    Text("Weather Reminder")
+                },
+                text = {
+                    Text(message)
+                },
+                confirmButton = {
+                    TextButton(onClick = { showReminder = false }) {
+                        Text("OK")
+                    }
+                },
+                containerColor = Color.DarkGray,
+                titleContentColor = Color.White,
+                textContentColor = Color.White
+            )
+
+
+
         }
 
         // Content Area
