@@ -46,8 +46,11 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
                 mfaResolver = result.resolver
                 mfaHints = result.hints
             }
-            _authUiState.value = result // 將結果（包括 MfaRequired）暴露給 UI
-            // Success 狀態的 currentUser 更新將在 signInWithMfaAssertion 成功後進行
+            _authUiState.value = result
+
+            if (result is AuthUiState.Success) {
+                _currentUser.value = result.user
+            }
         }
     }
 
