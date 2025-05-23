@@ -1,9 +1,11 @@
 package com.example.weatherwise.ui.auth
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,8 +13,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,10 +38,18 @@ import com.example.weatherwise.ui.theme.WeatherWiseTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterScreen(onRegisterClick: (String, String) -> Unit) {
+fun RegisterScreen(
+    onRegisterClick: (String, String) -> Unit,
+    onBackClick: () -> Unit = {}  // ✅ 添加返回回調參數
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+
+    // ✅ 處理系統返回鍵
+    BackHandler {
+        onBackClick()
+    }
 
     Column(
         modifier = Modifier
@@ -45,6 +59,22 @@ fun RegisterScreen(onRegisterClick: (String, String) -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        // ✅ 添加頂部返回按鈕
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Start
+        ) {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    Icons.Default.ArrowBack,
+                    contentDescription = "返回登錄",
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         Image(
             painter = painterResource(id = R.drawable.rain),
             contentDescription = stringResource(R.string.register),
@@ -70,7 +100,8 @@ fun RegisterScreen(onRegisterClick: (String, String) -> Unit) {
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Column(modifier = Modifier.fillMaxWidth()) {Text(text = stringResource(R.string.confirm_password))
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(text = stringResource(R.string.confirm_password))
             StyledTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
@@ -80,6 +111,7 @@ fun RegisterScreen(onRegisterClick: (String, String) -> Unit) {
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = { onRegisterClick(email, password) },
+            modifier = Modifier.fillMaxWidth(),  // ✅ 添加 fillMaxWidth 保持一致性
             shape = RoundedCornerShape(8.dp)
         ) {
             Text(stringResource(R.string.register))
@@ -91,6 +123,9 @@ fun RegisterScreen(onRegisterClick: (String, String) -> Unit) {
 @Composable
 fun RegisterScreenPreview() {
     WeatherWiseTheme(darkTheme = true) {
-        RegisterScreen(onRegisterClick = { _, _ -> })
+        RegisterScreen(
+            onRegisterClick = { _, _ -> },
+            onBackClick = {}  // ✅ 在 Preview 中也添加參數
+        )
     }
 }
