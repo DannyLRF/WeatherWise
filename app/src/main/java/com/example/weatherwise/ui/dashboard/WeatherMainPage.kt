@@ -203,17 +203,21 @@ fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController, 
         val settings by settingsViewModel.settings.collectAsState()
         var showReminder by remember { mutableStateOf(true) }
 
-        if (settings.weatherNotifications && showReminder) {
-            //Text("notification used", color = Color.Green)
-            Button(
-                onClick = {
-                    showReminder = false
-                },
+        if (settings.weatherNotifications && showReminder && weatherData != null) {
+            // Get current celsius
+            val temp = TemperatureSettings.convertTemp(weatherData!!.temperature)
 
+            // Check if weather is good or bad
+            val message = when {
+                temp in 18.0..25.0 -> "✅ Good weather"
+                else -> "⚠️ Bad weather"
+            }
+
+            Button(
+                onClick = { showReminder = false },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Weather Notification")
-
+                Text(message)
             }
         }
 
