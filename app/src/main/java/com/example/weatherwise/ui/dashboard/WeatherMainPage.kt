@@ -81,6 +81,7 @@ fun DashboardPage(navController: NavController, userId: String ) {
     val viewModel: WeatherViewModel = viewModel()
     val hasLoaded = remember { mutableStateOf(false) }
 
+
     // Load data only once when the composable is first composed
     LaunchedEffect(Unit) {
         if (!hasLoaded.value) {
@@ -150,7 +151,6 @@ fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController, 
         if (!hasLocationPermission) {
             locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         } else {
-
             // If permission was already granted (e.g. from previous session or initial check)
             // viewModel.loadAllData(context, "3a936acc8bb109dcb94017abbc0ec0fb")
         }
