@@ -10,6 +10,6 @@ class AuthViewModelFactory(private val authRepository: AuthRepository) : ViewMod
             @Suppress("UNCHECKED_CAST")
             return AuthViewModel(authRepository) as T
         }
-        throw IllegalArgumentException("未知的 ViewModel class")
+        throw IllegalArgumentException("unknown ViewModel class")
     }
 }
