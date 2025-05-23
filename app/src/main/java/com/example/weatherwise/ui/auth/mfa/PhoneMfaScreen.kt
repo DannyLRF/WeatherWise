@@ -52,11 +52,11 @@ fun PhoneMfaSetupScreen(
 
     // 監聽 isMfaSuccessfullySetup 的變化，以便在設置/禁用成功後執行回調
     LaunchedEffect(phoneMfaViewModel.isMfaSuccessfullySetup, phoneMfaViewModel.infoMessage) {
-        if (phoneMfaViewModel.infoMessage?.contains("成功啟用") == true ||
-            phoneMfaViewModel.infoMessage?.contains("已禁用") == true) {
+        if (phoneMfaViewModel.infoMessage?.contains("enabled") == true ||
+            phoneMfaViewModel.infoMessage?.contains("disabled") == true) {
             // 只有在明確成功或禁用時才觸發完成回調
             // 避免在僅加載狀態時就跳轉
-            if(phoneMfaViewModel.isMfaSuccessfullySetup || phoneMfaViewModel.infoMessage?.contains("已禁用") == true) {
+            if(phoneMfaViewModel.isMfaSuccessfullySetup || phoneMfaViewModel.infoMessage?.contains("disabled") == true) {
                 onMfaSetupComplete()
             }
         }
@@ -72,12 +72,12 @@ fun PhoneMfaSetupScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("電話 MFA 設定") },
+                title = { Text("MFA setup") },
                 navigationIcon = {
                     IconButton(onClick = { onMfaSetupComplete() }) { // 返回按鈕也觸發完成回調
                         Icon(                       // ← 這裡要顯式寫 imageVector 參數
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回"
+                            contentDescription = "back"
                         )
                     }
                 }
@@ -97,21 +97,21 @@ fun PhoneMfaSetupScreen(
             // Text(stringResource(R.string.mfa_setup), ...)
 
             if (currentUser == null) {
-                Text("請先登錄以設定 MFA。")
+                Text("login to setup MFA。")
                 return@Column
             }
 
             if (phoneMfaViewModel.isMfaSuccessfullySetup) {
-                Text("電話 MFA 已為 ${phoneMfaViewModel.phoneNumberInput} 啟用。") // 使用 phoneNumberInput
+                Text("MFA enabled for ${phoneMfaViewModel.phoneNumberInput}") // 使用 phoneNumberInput
                 Button(onClick = { phoneMfaViewModel.disablePhoneMfa() }) {
-                    Text("禁用電話 MFA")
+                    Text("disabled MFA")
                 }
             } else {
                 // 使用您 MFASetupScreen.kt 中的 StyledTextField
                 OutlinedTextField( // 暫用 OutlinedTextField 替代 StyledTextField
                     value = phoneMfaViewModel.phoneNumberInput,
                     onValueChange = { phoneMfaViewModel.phoneNumberInput = it },
-                    label = { Text("電話號碼 (例如 +16505551234)") },
+                    label = { Text("phone number (e.g +16505551234)") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     modifier = Modifier.fillMaxWidth(),
@@ -122,14 +122,14 @@ fun PhoneMfaSetupScreen(
                     onClick = { phoneMfaViewModel.startPhoneNumberVerificationForSetup(activity, phoneMfaViewModel.phoneNumberInput) },
                     enabled = !phoneMfaViewModel.isLoading && !phoneMfaViewModel.isCodeSent && phoneMfaViewModel.phoneNumberInput.isNotBlank()
                 ) {
-                    Text("1. 發送驗證碼")
+                    Text("1. send verification code")
                 }
 
                 if (phoneMfaViewModel.isCodeSent) {
                     OutlinedTextField( // 暫用 OutlinedTextField 替代 StyledTextField
                         value = phoneMfaViewModel.smsCodeInput,
                         onValueChange = { phoneMfaViewModel.smsCodeInput = it },
-                        label = { Text("2. 輸入6位數驗證碼") },
+                        label = { Text("2. verification code") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth()
@@ -138,7 +138,7 @@ fun PhoneMfaSetupScreen(
                         onClick = { phoneMfaViewModel.verifySmsCodeAndEnableMfa() },
                         enabled = !phoneMfaViewModel.isLoading && phoneMfaViewModel.smsCodeInput.isNotBlank()
                     ) {
-                        Text("3. 驗證並啟用 MFA")
+                        Text("3. verify and enable MFA")
                     }
                 }
             }

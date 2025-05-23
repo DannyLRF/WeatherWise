@@ -49,18 +49,18 @@ fun MFAVerificationLoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("MFA 驗證", style = MaterialTheme.typography.headlineMedium)
+        Text("MFA verification", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
 
         // 您可以將 MFAVerificationScreen.kt 中的 Image 和 Text 佈局放在這裡
         // Image(painter = painterResource(id = R.drawable.lock), ...)
-        Text("已向 ${phoneMfaViewModel.phoneNumberInput} 發送驗證碼。") // phoneNumberInput 應由登錄流程設置
+        Text("sent code to ${phoneMfaViewModel.phoneNumberInput} 。") // phoneNumberInput 應由登錄流程設置
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField( // 暫用 OutlinedTextField 替代 StyledTextField
             value = phoneMfaViewModel.smsCodeInput,
             onValueChange = { phoneMfaViewModel.smsCodeInput = it },
-            label = { Text("輸入6位數驗證碼") },
+            label = { Text("input code") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
@@ -95,13 +95,13 @@ fun MFAVerificationLoginScreen(
                         phoneHint
                     )
                 } else {
-                    Toast.makeText(context, "無法重新發送驗證碼，請重新登錄", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "can not send code", Toast.LENGTH_LONG).show()
                 }
             },
             enabled = !phoneMfaViewModel.isLoading,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("重新發送驗證碼")
+            Text("resend the code")
         }
 
         if (phoneMfaViewModel.isLoading || authViewModel.authUiState.value is AuthUiState.Loading) {
@@ -109,7 +109,7 @@ fun MFAVerificationLoginScreen(
         }
 
         phoneMfaViewModel.infoMessage?.let { message ->
-            Text(message, color = if (message.contains("失敗")) MaterialTheme.colorScheme.error else LocalContentColor.current)
+            Text(message, color = if (message.contains("failed")) MaterialTheme.colorScheme.error else LocalContentColor.current)
         }
         // 也顯示來自 AuthViewModel 的錯誤信息
         val authStateValue = authViewModel.authUiState.value

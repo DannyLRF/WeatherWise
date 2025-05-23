@@ -53,7 +53,7 @@ class PhoneMfaViewModel : ViewModel() {
                 if (profile?.isPhoneMfaEnabled == true) {
                     isMfaSuccessfullySetup = true
                     this@PhoneMfaViewModel.phoneNumberInput = profile.phoneNumber ?: ""
-                    infoMessage = "電話 MFA 已為 ${profile.phoneNumber} 啟用。"
+                    infoMessage = "MFA enabled for ${profile.phoneNumber}"
                 } else {
                     // 如果新用戶沒有 MFA，清除之前的設置狀態
                     isMfaSuccessfullySetup = false
@@ -82,12 +82,12 @@ class PhoneMfaViewModel : ViewModel() {
     // 新增 MFA 專用的驗證方法
     private fun initiateMfaPhoneVerification(activity: Activity?, session: MultiFactorSession, phoneHint: PhoneMultiFactorInfo) {
         if (activity == null) {
-            infoMessage = "無法獲取 Activity 實例"
+            infoMessage = "can't retrieve Activity"
             return
         }
 
         isLoading = true
-        infoMessage = "正在發送驗證碼..."
+        infoMessage = "sending code..."
         isCodeSent = false
 
         authCallbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
@@ -96,14 +96,14 @@ class PhoneMfaViewModel : ViewModel() {
                 Log.d(PHONE_MFA_TAG, "onVerificationCompleted:$credential")
                 isLoading = false
                 isCodeSent = true
-                infoMessage = "驗證碼自動獲取成功。"
+                infoMessage = "code retrieved"
                 smsCodeInput = credential.smsCode ?: ""
             }
 
             override fun onVerificationFailed(e: FirebaseException) {
                 Log.w(PHONE_MFA_TAG, "onVerificationFailed", e)
                 isLoading = false
-                infoMessage = "電話號碼驗證失敗: ${e.message}"
+                infoMessage = "failed to verify: ${e.message}"
                 isCodeSent = false
             }
 
@@ -111,7 +111,7 @@ class PhoneMfaViewModel : ViewModel() {
                 Log.d(PHONE_MFA_TAG, "onCodeSent:$verificationId")
                 this@PhoneMfaViewModel.verificationId = verificationId
                 isLoading = false
-                infoMessage = "驗證碼已發送"
+                infoMessage = "code sent"
                 isCodeSent = true
             }
         }
@@ -129,17 +129,17 @@ class PhoneMfaViewModel : ViewModel() {
 
     private fun initiatePhoneNumberVerification(activity: Activity?, fullPhoneNumber: String) {
         if (activity == null) {
-            infoMessage = "無法獲取 Activity 實例"
+            infoMessage = "can't retrieve Activity"
             return
         }
 
         if (fullPhoneNumber.isBlank()) {
-            infoMessage = "請輸入有效的電話號碼。"
+            infoMessage = "input valid number"
             return
         }
 
         isLoading = true
-        infoMessage = "正在發送驗證碼..."
+        infoMessage = "sending code..."
         isCodeSent = false
 
         authCallbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
@@ -149,17 +149,17 @@ class PhoneMfaViewModel : ViewModel() {
                 isCodeSent = true
 
                 if (mfaLoginSession != null) {
-                    infoMessage = "驗證碼自動獲取成功。"
+                    infoMessage = "code retrieved"
                     smsCodeInput = credential.smsCode ?: ""
                 } else {
-                    linkCredentialToUserForSetup(credential, "驗證碼自動驗證成功！MFA 已啟用。")
+                    linkCredentialToUserForSetup(credential, "MFA enabled")
                 }
             }
 
             override fun onVerificationFailed(e: FirebaseException) {
                 Log.w(PHONE_MFA_TAG, "onVerificationFailed", e)
                 isLoading = false
-                infoMessage = "電話號碼驗證失敗: ${e.message}"
+                infoMessage = "failed to verify code: ${e.message}"
                 isCodeSent = false
             }
 
@@ -167,7 +167,7 @@ class PhoneMfaViewModel : ViewModel() {
                 Log.d(PHONE_MFA_TAG, "onCodeSent:$verificationId")
                 this@PhoneMfaViewModel.verificationId = verificationId
                 isLoading = false
-                infoMessage = "驗證碼已發送到 $fullPhoneNumber"
+                infoMessage = "code sent $fullPhoneNumber"
                 isCodeSent = true
             }
         }
@@ -189,27 +189,27 @@ class PhoneMfaViewModel : ViewModel() {
     // 用於 MFA 設置流程
     fun verifySmsCodeAndEnableMfa() {
         val currentVerificationId = verificationId ?: run {
-            infoMessage = "錯誤：驗證 ID 未找到。"
+            infoMessage = "can't find id"
             return
         }
         if (smsCodeInput.isBlank() || smsCodeInput.length != 6) {
-            infoMessage = "請輸入6位數驗證碼。"
+            infoMessage = "input code"
             return
         }
         isLoading = true
-        infoMessage = "正在驗證..."
+        infoMessage = "verifying..."
         val credential = PhoneAuthProvider.getCredential(currentVerificationId, smsCodeInput)
-        linkCredentialToUserForSetup(credential, "MFA 已成功啟用！")
+        linkCredentialToUserForSetup(credential, "MFA enabled！")
     }
 
     private fun linkCredentialToUserForSetup(credential: PhoneAuthCredential, successMessage: String) {
         val currentUser = firebaseAuth.currentUser ?: run {
-            infoMessage = "錯誤：用戶未登錄。"
+            infoMessage = "user haven't login"
             isLoading = false
             return
         }
         val multiFactorAssertion = PhoneMultiFactorGenerator.getAssertion(credential)
-        currentUser.multiFactor.enroll(multiFactorAssertion, "我的電話號碼")
+        currentUser.multiFactor.enroll(multiFactorAssertion, "my phone number")
             .addOnCompleteListener { task ->
                 isLoading = false
                 if (task.isSuccessful) {
@@ -227,7 +227,7 @@ class PhoneMfaViewModel : ViewModel() {
                     }
                 } else {
                     Log.w(PHONE_MFA_TAG, "Error enrolling MFA", task.exception)
-                    infoMessage = "啟用 MFA 失敗: ${task.exception?.message}"
+                    infoMessage = "failed to enable MFA: ${task.exception?.message}"
                 }
             }
     }
@@ -235,11 +235,11 @@ class PhoneMfaViewModel : ViewModel() {
     // 用於登錄流程，生成 MultiFactorAssertion
     fun getPhoneMultiFactorAssertionForLogin(): PhoneMultiFactorAssertion? {
         val currentVerificationId = verificationId ?: run {
-            infoMessage = "錯誤：驗證 ID 未找到 (登錄流程)。"
+            infoMessage = "failed to find id"
             return null
         }
         if (smsCodeInput.isBlank()) { // 登錄時可能自動獲取，也可能需要輸入
-            infoMessage = "請輸入驗證碼 (登錄流程)。"
+            infoMessage = "input the code"
             // 如果是自動完成，smsCodeInput 可能為空，但 credential 已在 onVerificationCompleted 中處理
             // 這裡假設如果需要手動輸入，則 smsCodeInput 不會為空
             // 實際上，如果 onVerificationCompleted 提供了 credential，應直接使用它
@@ -255,7 +255,7 @@ class PhoneMfaViewModel : ViewModel() {
             firestore.collection("user_mfa_profiles").document(userMfaProfile.userId).set(userMfaProfile).await()
             Log.d(PHONE_MFA_TAG, "User MFA profile saved.")
         } catch (e: Exception) {
-            infoMessage = "儲存MFA設定失敗: ${e.message}"
+            infoMessage = "failed to store mfa info: ${e.message}"
             Log.e(PHONE_MFA_TAG, "Error saving MFA profile", e)
         }
     }
@@ -276,7 +276,7 @@ class PhoneMfaViewModel : ViewModel() {
             isLoading = true
             val phoneFactor = currentUser.multiFactor.enrolledFactors.find { it.factorId == PhoneMultiFactorGenerator.FACTOR_ID }
             if (phoneFactor == null) {
-                infoMessage = "未找到已啟用的電話 MFA。"
+                infoMessage = "failed to find phone number"
                 isLoading = false
                 saveUserMfaProfile(UserPhoneMfaProfile(userId = currentUser.uid, isPhoneMfaEnabled = false, phoneNumber = null))
                 isMfaSuccessfullySetup = false
@@ -285,7 +285,7 @@ class PhoneMfaViewModel : ViewModel() {
             currentUser.multiFactor.unenroll(phoneFactor).addOnCompleteListener { task ->
                 isLoading = false
                 if (task.isSuccessful) {
-                    infoMessage = "電話 MFA 已禁用。"
+                    infoMessage = "MFA disabled"
                     isMfaSuccessfullySetup = false
                     phoneNumberInput = ""
                     smsCodeInput = ""
@@ -295,7 +295,7 @@ class PhoneMfaViewModel : ViewModel() {
                         saveUserMfaProfile(UserPhoneMfaProfile(userId = currentUser.uid, isPhoneMfaEnabled = false, phoneNumber = null))
                     }
                 } else {
-                    infoMessage = "禁用 MFA 失敗: ${task.exception?.message}"
+                    infoMessage = "failed to disable MFA ${task.exception?.message}"
                 }
             }
         }
