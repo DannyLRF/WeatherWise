@@ -40,13 +40,13 @@ import com.example.weatherwise.ui.theme.WeatherWiseTheme
 @Composable
 fun RegisterScreen(
     onRegisterClick: (String, String) -> Unit,
-    onBackClick: () -> Unit = {}  // ✅ 添加返回回調參數
+    onBackClick: () -> Unit = {}
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
 
-    // ✅ 處理系統返回鍵
+
     BackHandler {
         onBackClick()
     }
@@ -59,7 +59,6 @@ fun RegisterScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // ✅ 添加頂部返回按鈕
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Start
@@ -67,7 +66,7 @@ fun RegisterScreen(
             IconButton(onClick = onBackClick) {
                 Icon(
                     Icons.Default.ArrowBack,
-                    contentDescription = "返回登錄",
+                    contentDescription = "back",
                     tint = MaterialTheme.colorScheme.onBackground
                 )
             }
@@ -111,7 +110,7 @@ fun RegisterScreen(
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = { onRegisterClick(email, password) },
-            modifier = Modifier.fillMaxWidth(),  // ✅ 添加 fillMaxWidth 保持一致性
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp)
         ) {
             Text(stringResource(R.string.register))
@@ -125,7 +124,7 @@ fun RegisterScreenPreview() {
     WeatherWiseTheme(darkTheme = true) {
         RegisterScreen(
             onRegisterClick = { _, _ -> },
-            onBackClick = {}  // ✅ 在 Preview 中也添加參數
+            onBackClick = {}
         )
     }
 }
