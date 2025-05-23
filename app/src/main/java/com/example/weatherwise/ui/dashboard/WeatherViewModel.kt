@@ -46,6 +46,11 @@ class WeatherViewModel : ViewModel() {
 
     fun loadAllData(context: Context, apiKey: String) {
         viewModelScope.launch {
+
+            if (_userLat.value != null && _weatherData.value != null) {
+                Log.d("WeatherViewModel", "Loaded，skip loadAllData")
+                return@launch
+            }
             // Reset
             _cityName.value = "Loading..."
             _weatherData.value = null
@@ -80,6 +85,8 @@ class WeatherViewModel : ViewModel() {
     }
 
     fun loadAllDataByCoords(lat: Double, lon: Double, context: Context, apiKey: String) {
+        Log.d("WeatherViewModel", "loadAllDataByCoords called with lat=$lat, lon=$lon")
+
         viewModelScope.launch {
             // Reset
             _cityName.value = "Loading..."

@@ -2,6 +2,7 @@ package com.example.weatherwise
 
 // UI components and layout imports from Jetpack Compose
 import android.app.Application
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -178,6 +179,7 @@ fun CityScreen(navController: NavController, userId: String) {
 
                 CityItem(city = city,
                     onClick = {
+                        Log.d("CityScreen", "Clicked city: ${city.name}, lat: ${city.lat}, lon: ${city.lon}")
                         // Navigate to main page with selected city's coordinates
                         navController.navigate("main_page/${city.lat}/${city.lon}")
                     },
