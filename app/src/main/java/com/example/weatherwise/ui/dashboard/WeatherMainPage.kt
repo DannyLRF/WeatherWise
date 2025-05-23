@@ -76,40 +76,43 @@ import java.time.LocalDate
 
 // This is for navigation to main page
 @Composable
-fun WeatherMainPage(navController: NavController, userId: String ) {
+fun WeatherMainPage(navController: NavController, userId: String?) { // 修改 userId 类型
     val context = LocalContext.current
     val viewModel: WeatherViewModel = viewModel()
     val hasLoaded = remember { mutableStateOf(false) }
 
-    // Load data only once when the composable is first composed
     LaunchedEffect(Unit) {
         if (!hasLoaded.value) {
             viewModel.loadAllData(context, "79a25643aff43a2dbd3f03165be96f1a")
             hasLoaded.value = true
         }
     }
-    WeatherContentUI(viewModel, navController, userId ) // Shared UI content function
+    WeatherContentUI(viewModel, navController, userId, context) // 传递 userId 和 context
 }
 
 // This is for navigation to city selected
 @Composable
-fun WeatherMainPage(lat: Double, lon: Double, navController: NavController, userId: String ) {
+fun WeatherMainPage(lat: Double, lon: Double, navController: NavController, userId: String?) { // 修改 userId 类型
     val context = LocalContext.current
     val viewModel: WeatherViewModel = viewModel()
     val hasLoaded = remember { mutableStateOf(false) }
 
-    // Load data for the given coordinates only once
     LaunchedEffect(Unit) {
         if (!hasLoaded.value) {
             viewModel.loadAllDataByCoords(lat, lon, context, "79a25643aff43a2dbd3f03165be96f1a")
             hasLoaded.value = true
         }
     }
-    WeatherContentUI(viewModel, navController, userId) // Shared UI content function
+    WeatherContentUI(viewModel, navController, userId, context) // 传递 userId 和 context
 }
 
 @Composable
-fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController, userId: String ) {
+fun WeatherContentUI(
+    viewModel: WeatherViewModel,
+    navController: NavController,
+    userId: String?,
+    context: Context
+) {
     val context = LocalContext.current
 
     // Permission state for location access
@@ -161,7 +164,7 @@ fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController, 
     val dailyList by viewModel.dailyList
     val userLat by viewModel.userLat
     val userLon by viewModel.userLon
-    val errorMessage by viewModel.errorMessage // Assuming you add this to your ViewModel
+    val errorMessage by viewModel.errorMessage
 
     // Main UI
     Column(
@@ -177,7 +180,16 @@ fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController, 
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = {  navController.navigate("city/$userId") }) {
+            IconButton(onClick = {
+                if (userId != null) { // userId 是从 AuthViewModel 获取的 currentUserId
+                    navController.navigate("city") // 直接导航到 "city" 路由，不再拼接 userId
+                } else {
+                    Toast.makeText(context, "please login", Toast.LENGTH_SHORT).show()
+                    // 让 WeatherAppNavigation 中的逻辑处理跳转到登录
+                    // navController.navigate(Screen.Login.name) // 或者直接调用 MainActivity 的 navigateToLogin
+                    // 最好的方式是让 WeatherAppNavigation 的 "city" 路由自己处理未登录的情况
+                }
+            }) {
                 Icon(Icons.Default.Menu, contentDescription = "City", tint = Color.White)
             }
             Text(
@@ -187,7 +199,9 @@ fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController, 
                 textAlign = TextAlign.Center,
                 modifier = Modifier.weight(1f)
             )
-            IconButton(onClick = { navController.navigate("settings") }) {
+            IconButton(onClick = {
+                navController.navigate("settings") // settings 路由在 WeatherAppNavigation 中有保护
+            }) {
                 Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White)
             }
         }

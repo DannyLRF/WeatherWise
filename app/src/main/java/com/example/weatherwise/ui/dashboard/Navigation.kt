@@ -11,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.weatherwise.ui.auth.AuthViewModel
 import com.example.weatherwise.ui.auth.mfa.PhoneMfaViewModel
+import com.example.weatherwise.ui.navigation.Screen
 
 // Make sure all necessary screen composables are imported
 // e.g., import com.example.weatherwise.WeatherMainPage, com.example.weatherwise.CityPage, etc.
@@ -30,34 +31,18 @@ import com.example.weatherwise.ui.auth.mfa.PhoneMfaViewModel
 fun WeatherAppNavigation(
     authViewModel: AuthViewModel,
     navigateToMfaSetup: () -> Unit,
-    phoneMfaViewModel: PhoneMfaViewModel
+    phoneMfaViewModel: PhoneMfaViewModel,
+    navigateToLogin: () -> Unit // 新增回调
 ) {
     val navController = rememberNavController()
+    val context = LocalContext.current
 
-    // Define the app's navigation graph
-    NavHost(navController, startDestination = "main_weather_dashboard") // Initial screen when app starts
-    {
-        // Route: Main weather dashboard (default start screen)
+    NavHost(navController, startDestination = "main_weather_dashboard") {
         composable("main_weather_dashboard") {
-            val context = LocalContext.current
-            val userId = authViewModel.currentUserId
-
-            if (userId != null) {
-                WeatherMainPage(navController = navController, userId = userId)
-            } else {
-                // ✅ 弹出错误提示
-                Toast.makeText(context, "Please log in to continue", Toast.LENGTH_SHORT).show()
-
-                // ✅ 跳转到登录页
-                LaunchedEffect(Unit) {
-                    navController.navigate("login") {
-                        popUpTo("main_weather_dashboard") { inclusive = true } // 可选：清除栈
-                    }
-                }
-            }
+            // userId 可以为 null (游客)
+            WeatherMainPage(navController = navController, userId = authViewModel.currentUserId)
         }
 
-        // // Route: City selection page with parameters (lat, lon)
         composable(
             route = "main_page/{lat}/{lon}",
             arguments = listOf(
@@ -67,40 +52,56 @@ fun WeatherAppNavigation(
         ) { backStackEntry ->
             val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull() ?: 0.0
             val lon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull() ?: 0.0
-            val userId = authViewModel.currentUserId
+            // userId 可以为 null (游客)
+            WeatherMainPage(lat = lat, lon = lon, navController = navController, userId = authViewModel.currentUserId)
+        }
 
-            if (userId != null) {
-                WeatherMainPage(lat = lat, lon = lon, navController = navController, userId = userId)
-            } else {
-                Toast.makeText(LocalContext.current, "Please log in to view weather data.", Toast.LENGTH_SHORT).show()
-                LaunchedEffect(Unit) {
-                    navController.navigate("login") {
-                        popUpTo("main_page/$lat/$lon") { inclusive = true } // 可选：移除非法页面
-                    }
-                }
+        composable(Screen.Login.name) { // 添加 Login 路由以便从导航图内部跳转
+            // MainActivity 的 when(currentScreen) 会处理实际的 LoginScreen 显示
+            // 这里仅用于导航目标，实际UI由 MainActivity 控制
+            LaunchedEffect(Unit) {
+                navigateToLogin()
             }
         }
 
-        // // Route: Settings screen, receives ViewModels and MFA setup callback
         composable("settings") {
-            SettingsScreen(
-                navController = navController,
-                authViewModel = authViewModel,
-                navigateToMfaSetup = navigateToMfaSetup,
-                phoneMfaViewModel = phoneMfaViewModel  // passing to SettingsScreen
-            )
+            if (authViewModel.currentUserId == null) {
+                Toast.makeText(context, "请登录后访问设置", Toast.LENGTH_SHORT).show()
+                LaunchedEffect(Unit) {
+                    // navController.navigate(Screen.Login.name) { // 使用枚举确保路由名称一致
+                    //     popUpTo("settings") { inclusive = true }
+                    // }
+                    navigateToLogin() // 使用回调切换到登录界面
+                    // 在 MainActivity 中， currentScreen 会被设置为 Screen.Login
+                    // 此处 popUpTo 可能不再需要，因为 MainActivity 会重建 NavHost
+                }
+            } else {
+                SettingsScreen(
+                    navController = navController,
+                    authViewModel = authViewModel,
+                    navigateToMfaSetup = navigateToMfaSetup,
+                    phoneMfaViewModel = phoneMfaViewModel
+                )
+            }
         }
 
-        // Route: City selection screen
-        composable(
-            route = "city/{userId}",
-            arguments = listOf(navArgument("userId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val userId = backStackEntry.arguments?.getString("userId") ?: ""
-            CityScreen(navController = navController, userId = userId)
+        // 修改 city 路由，使其不直接依赖路径中的 userId，而是在 Composable 内部检查 AuthViewModel
+        composable("city") { // 简化路由
+            val currentUserId = authViewModel.currentUserId
+            if (currentUserId == null) {
+                Toast.makeText(context, "请登录后访问城市列表", Toast.LENGTH_SHORT).show()
+                LaunchedEffect(Unit) {
+                    // navController.navigate(Screen.Login.name) {
+                    //    popUpTo("city") { inclusive = true }
+                    // }
+                    navigateToLogin()
+                }
+            } else {
+                // 确保 CityScreen 接收一个非空的 userId
+                CityScreen(navController = navController, userId = currentUserId)
+            }
         }
 
-        // Route: 5-day forecast page, navigated to with lat/lon parameters
         composable(
             route = "five_day_forecast/{lat}/{lon}",
             arguments = listOf(
@@ -110,24 +111,16 @@ fun WeatherAppNavigation(
         ) { backStackEntry ->
             val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull() ?: 0.0
             val lon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull() ?: 0.0
-
-            // Launch the 5-day forecast page with back button handler
             FiveDayForecastPage(
                 lat = lat,
                 lon = lon,
-                apiKey = "3a936acc8bb109dcb94017abbc0ec0fb", // Reminder: Secure API key
+                apiKey = "79a25643aff43a2dbd3f03165be96f1a", // 示例 API Key
                 onBack = { navController.popBackStack() }
             )
         }
 
-        // This route was "about_app/{page_type}" and SettingsScreen navigated to "about_app/$routeSegment"
-        // If $routeSegment can be "terms_of_service", then page_type is appropriate.
-        // About pages like Terms of Service or Privacy Policy
         composable("about_app/{page_type}") { backStackEntry ->
             val pageType = backStackEntry.arguments?.getString("page_type") ?: "unknown"
-
-            // Ensure title transformation matches what AboutScreen expects or how it processes it
-            // Format the title from the URL-friendly string
             val title = pageType.replace("_", " ").replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
             AboutScreen(navController = navController, title = title)
         }
