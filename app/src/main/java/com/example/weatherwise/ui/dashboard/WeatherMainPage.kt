@@ -44,6 +44,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,6 +68,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.weatherwise.viewmodel.SettingsViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -76,7 +78,7 @@ import java.time.LocalDate
 
 // This is for navigation to main page
 @Composable
-fun WeatherMainPage(navController: NavController, userId: String ) {
+fun DashboardPage(navController: NavController, userId: String ) {
     val context = LocalContext.current
     val viewModel: WeatherViewModel = viewModel()
     val hasLoaded = remember { mutableStateOf(false) }
@@ -93,9 +95,11 @@ fun WeatherMainPage(navController: NavController, userId: String ) {
 
 // This is for navigation to city selected
 @Composable
-fun WeatherMainPage(lat: Double, lon: Double, navController: NavController, userId: String ) {
+fun CityWeatherPage(lat: Double, lon: Double, navController: NavController, userId: String ) {
+    Log.d("WeatherMainPage", "WeatherMainPage loaded with lat=$lat, lon=$lon")
+
     val context = LocalContext.current
-    val viewModel: WeatherViewModel = viewModel()
+    val viewModel: WeatherViewModel = viewModel(key = "city_$lat$lon")
     val hasLoaded = remember { mutableStateOf(false) }
 
     // Load data for the given coordinates only once
@@ -150,7 +154,7 @@ fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController, 
         } else {
 
             // If permission was already granted (e.g. from previous session or initial check)
-            viewModel.loadAllData(context, "3a936acc8bb109dcb94017abbc0ec0fb")
+            // viewModel.loadAllData(context, "3a936acc8bb109dcb94017abbc0ec0fb")
         }
     }
 
@@ -395,11 +399,13 @@ data class HourlyWeather(
 fun HourlyWeatherGraphCombined(hourlyList: List<HourlyWeather>) {
     if (hourlyList.isEmpty()) return
 
+    val convertedTemps = hourlyList.map { TemperatureSettings.convertTemp(it.temperature) }
+
     val maxTemp = hourlyList.maxOf { it.temperature }
     val minTemp = hourlyList.minOf { it.temperature }
     val tempRange = (maxTemp - minTemp).coerceAtLeast(1.0)
 
-    val graphHeight = 160.dp // 增高图形区域，避免上下重叠
+    val graphHeight = 160.dp
     val graphWidthPerItem = 60.dp
     val scrollState = rememberScrollState()
 
@@ -408,7 +414,7 @@ fun HourlyWeatherGraphCombined(hourlyList: List<HourlyWeather>) {
             .fillMaxWidth()
             .padding(vertical = 8.dp)
     ) {
-        // 图标 + 温度行
+        // Icon + temperature
         Row(
             modifier = Modifier
                 .horizontalScroll(scrollState)
@@ -431,7 +437,7 @@ fun HourlyWeatherGraphCombined(hourlyList: List<HourlyWeather>) {
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "${hour.temperature.toInt()}°",
+                        text = "${TemperatureSettings.convertTemp(hour.temperature).toInt()}${TemperatureSettings.getUnitSymbol()}",
                         color = Color.White,
                         fontSize = 14.sp
                     )
@@ -441,7 +447,7 @@ fun HourlyWeatherGraphCombined(hourlyList: List<HourlyWeather>) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 曲线图
+        // Line chart
         Row(
             modifier = Modifier
                 .horizontalScroll(scrollState)
@@ -464,7 +470,7 @@ fun HourlyWeatherGraphCombined(hourlyList: List<HourlyWeather>) {
                     Offset(x.toFloat(), y.toFloat())
                 }
 
-                // 曲线
+
                 val path = Path().apply {
                     moveTo(points[0].x, points[0].y)
                     for (i in 1 until points.size) {
@@ -481,7 +487,7 @@ fun HourlyWeatherGraphCombined(hourlyList: List<HourlyWeather>) {
                     style = Stroke(width = 4f)
                 )
 
-                // 圆点 + 温度
+                // temperature
                 points.forEachIndexed { index, point ->
                     drawCircle(
                         color = Color.Cyan,
@@ -490,7 +496,7 @@ fun HourlyWeatherGraphCombined(hourlyList: List<HourlyWeather>) {
                     )
                     drawIntoCanvas { canvas ->
                         canvas.nativeCanvas.drawText(
-                            "${hourlyList[index].temperature.toInt()}°",
+                            "${convertedTemps[index].toInt()}${TemperatureSettings.getUnitSymbol()}",
                             point.x,
                             point.y - 10f,
                             android.graphics.Paint().apply {
@@ -507,7 +513,7 @@ fun HourlyWeatherGraphCombined(hourlyList: List<HourlyWeather>) {
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        // 时间标签行
+        // Time tag
         Row(
             modifier = Modifier
                 .horizontalScroll(scrollState)
@@ -531,7 +537,7 @@ fun HourlyWeatherGraphCombined(hourlyList: List<HourlyWeather>) {
 data class DailyWeather(
     val date: String,           // yyyy-MM-dd
     val dayLabel: String,       // Today, Mon, Tue...
-    val currentTemp: Double,    // 当前温度（取中午的）
+    val currentTemp: Double,    // current temperature
     val maxTemp: Double,
     val minTemp: Double,
     val description: String,
@@ -583,13 +589,13 @@ fun NextThreeDaysWeatherSection(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = "↑${day.maxTemp.toInt()}° ↓${day.minTemp.toInt()}°",
+                        text = "↑${TemperatureSettings.convertTemp(day.maxTemp).toInt()}${TemperatureSettings.getUnitSymbol()} ↓${TemperatureSettings.convertTemp(day.minTemp).toInt()}${TemperatureSettings.getUnitSymbol()}",
                         color = Color.White,
                         fontSize = 12.sp
                     )
 
                     Text(
-                        text = "💨${day.windSpeed} m/s",
+                        text = "💨${WindSpeedSettings.formatSpeed(day.windSpeed)}",
                         color = Color.Gray,
                         fontSize = 10.sp
                     )
@@ -722,7 +728,7 @@ fun FiveDayForecastPage(
                 .padding(bottom = 16.dp)
         )
 
-        // 天气信息列表（占屏幕 2/3 高度）
+        // Weather information
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -744,7 +750,7 @@ fun FiveDayForecastPage(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // 日期
+                        // Dates
                         Text(
                             text = day.dayLabel,
                             color = Color.Black,
@@ -752,7 +758,7 @@ fun FiveDayForecastPage(
                             modifier = Modifier.weight(1f)
                         )
 
-                        // 图标
+                        // Icons
                         val iconRes = when (day.icon) {
                             "Clear" -> R.drawable.sun_icon
                             "Clouds" -> R.drawable.cloudy_icon
@@ -768,23 +774,23 @@ fun FiveDayForecastPage(
                                 .weight(1f)
                         )
 
-                        // 温度
+                        // Temperature
                         Text(
-                            text = "↑${day.maxTemp.toInt()}° ↓${day.minTemp.toInt()}°",
+                            text = "↑${TemperatureSettings.convertTemp(day.maxTemp).toInt()}${TemperatureSettings.getUnitSymbol()} ↓${TemperatureSettings.convertTemp(day.minTemp).toInt()}${TemperatureSettings.getUnitSymbol()}",
                             color = Color.Black,
                             fontSize = 14.sp,
                             modifier = Modifier.weight(2f)
                         )
 
-                        // 风速
+                        // Wind speed
                         Text(
-                            text = "💨 ${day.windSpeed} m/s",
+                            text = "💨 ${WindSpeedSettings.formatSpeed(day.windSpeed)}",
                             color = Color.DarkGray,
                             fontSize = 12.sp,
                             modifier = Modifier.weight(2f)
                         )
 
-                        // 湿度
+                        // Humidity
                         Text(
                             text = "💧 ${day.humidity}%",
                             color = Color.DarkGray,

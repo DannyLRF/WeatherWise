@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack // Updated import for ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -29,24 +30,24 @@ fun SettingsScreen(
     settingsViewModel: SettingsViewModel = viewModel(),
     authViewModel: AuthViewModel,
     navigateToMfaSetup: () -> Unit,
-    phoneMfaViewModel: PhoneMfaViewModel  // 添加 PhoneMfaViewModel 作為參數
+    phoneMfaViewModel: PhoneMfaViewModel  // add PhoneMfaViewModel
 ) {
     val settings by settingsViewModel.settings.collectAsState()
-    val isMfaEnabled = phoneMfaViewModel.isMfaSuccessfullySetup  // 獲取 MFA 狀態
+    val isMfaEnabled = phoneMfaViewModel.isMfaSuccessfullySetup  // get MFA states
 
-    // 觀察 MFA 狀態變化
+    // MFA
     LaunchedEffect(phoneMfaViewModel.isMfaSuccessfullySetup) {
-        // 空實現，僅用於觸發重組
+        //
     }
 
-    // 在屏幕顯示時檢查當前用戶的 MFA 狀態
+    // MFA statue
     LaunchedEffect(Unit) {
         phoneMfaViewModel.checkCurrentUserMfaStatus()
     }
 
     val units = listOf("Celsius", "Fahrenheit")
     val windSpeeds = listOf("KM/h", "MPH", "M/s")
-    val pressures = listOf("mbar", "inHG", "hPa")
+
     val about = listOf("Terms of Service", "Privacy Notice", "Share Feedback")
     // Ensure your NavHost in WeatherAppNavigation has "about_app/{page_type}"
     val aboutRoutes = listOf("Terms of Service", "Privacy Notice", "Share Feedback") // Match text or use keys
@@ -56,6 +57,7 @@ fun SettingsScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black) // Assuming a dark theme from your layout
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         // Top bar
         Box(
@@ -65,7 +67,10 @@ fun SettingsScreen(
         ) {
             IconButton(
                 onClick = { navController.navigateUp() }, // Navigates up within WeatherAppNavigation
-                modifier = Modifier.align(Alignment.CenterStart)
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(top = 4.dp)
+                    .offset(x = (-8).dp)
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack, // Use AutoMirrored
@@ -75,10 +80,12 @@ fun SettingsScreen(
             }
             Text(
                 text = "Settings",
-                fontSize = 28.sp, // Slightly adjusted from 32sp for better balance potentially
+                fontSize = 18.sp, // Slightly adjusted from 32sp for better balance potentially
                 color = Color.White,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.align(Alignment.Center)
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(top = 8.dp)
             )
         }
 
@@ -113,18 +120,7 @@ fun SettingsScreen(
                 )
             }
 
-            // Pressure settings section
-            item {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text("Pressure", fontSize = 20.sp, color = Color.White, style = MaterialTheme.typography.titleMedium)
-            }
-            items(pressures.size) { i ->
-                SettingOptionItem(
-                    title = pressures[i],
-                    selected = settings.pressure == pressures[i],
-                    onClick = { settingsViewModel.updatePressure(pressures[i]) }
-                )
-            }
+
 
             // Alerts settings section
             item {
@@ -162,10 +158,10 @@ fun SettingsScreen(
                         .fillMaxWidth()
                         .clickable {
                             if (isMfaEnabled) {
-                                // 直接禁用 MFA
+                                //
                                 phoneMfaViewModel.disablePhoneMfa()
                             } else {
-                                // 導航到 MFA 設置頁面
+                                //
                                 navigateToMfaSetup()
                             }
                         }
@@ -177,23 +173,23 @@ fun SettingsScreen(
                     ) {
                         Column {
                             Text(
-                                text = if (isMfaEnabled) "禁用電話驗證 (MFA)" else "設置電話驗證 (MFA)",
+                                text = if (isMfaEnabled) "Disanle (MFA)" else "set (MFA)",
                                 color = Color.White,
                                 style = MaterialTheme.typography.bodyLarge
                             )
 
-                            // 如果 MFA 已啟用，顯示電話號碼信息
+
                             if (isMfaEnabled) {
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "當前已啟用: ${phoneMfaViewModel.phoneNumberInput}",
+                                    text = "Used: ${phoneMfaViewModel.phoneNumberInput}",
                                     color = Color.Gray,
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             }
                         }
 
-                        // 可選: 添加圖標指示狀態
+
                         Icon(
                             imageVector = if (isMfaEnabled) Icons.Default.Check else Icons.Default.Add,
                             contentDescription = null,
@@ -257,9 +253,7 @@ fun SettingsScreen(
     }
 }
 
-// SettingOptionItem and SettingSwitchItem composables remain the same as in your provided code.
-// Ensure they are correctly defined or imported.
-// Example stubs if they are not defined elsewhere:
+
 @Composable
 fun SettingOptionItem(title: String, selected: Boolean, onClick: () -> Unit) {
     Surface(
@@ -318,38 +312,81 @@ fun SettingSwitchItem(title: String, description: String, checked: Boolean, onCh
     }
 }
 
-// AboutScreen also remains as you've defined it.
-// @OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun AboutScreen(navController: NavHostController, title: String) {
-    // ... (implementation of AboutScreen from your file)
-    // For brevity, not re-pasting the full AboutScreen text content here.
-    // Ensure its package and imports are correct.
-    val content = when (title.replace("_", " ").replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }) { // Normalize title back
-        "Terms Of Service" -> "You have the following rights..." // Actual content
-        "Privacy Notice" -> "Security of Your Information..." // Actual content
-        "Share Feedback" -> "We’d love to hear from you!..." // Actual content
-        else -> "Content for $title not found."
-    }
+    val termprivacy = """You have the following rights... """.trimIndent()
+
+    val privacynotice = """Security of Your Information...   """.trimIndent()
+
+    val FEEDBACKTEXT = """
+We’d love to hear from you!
+Please email us at group@student.monash.edu.com. 
+Thank you for helping us improve!""".trimIndent()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .padding(16.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { navController.navigateUp() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+        // Top
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp, start = 8.dp, end = 8.dp)
+        ) {
+            IconButton(
+                onClick = { navController.navigateUp() },
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(top = 4.dp)
+                    .offset(x = (-8).dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color.White
+                )
             }
-            Spacer(Modifier.width(8.dp))
+
             Text(
-                text = title.replace("_", " ").replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }, // Display title
-                style = MaterialTheme.typography.headlineSmall,
-                color = Color.White
+                text = title,
+                fontSize = 18.sp,
+                color = Color.White,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(top = 8.dp)
             )
         }
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(text = content, style = MaterialTheme.typography.bodyLarge, color = Color.White)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        val content = when (title) {
+            "Terms of Service" -> termprivacy
+            "Privacy Notice" -> privacynotice
+            "Share Feedback" -> FEEDBACKTEXT
+            else -> "No content available."
+        }
+
+        Surface(
+            color = Color.DarkGray,
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 4.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = 32.dp, bottom = 8.dp)
+        ) {
+            Text(
+                text = content,
+                fontSize = 18.sp,
+                color = Color.White,
+                style = MaterialTheme.typography.bodyMedium,
+                lineHeight = 22.sp,
+                modifier = Modifier.padding(16.dp)
+            )
+        }
     }
+
 }
