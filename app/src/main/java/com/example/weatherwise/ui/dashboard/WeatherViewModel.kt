@@ -17,6 +17,16 @@ import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume                    // ← resume 擴充函式
 import java.time.LocalDate
 
+/**
+ * ViewModel responsible for loading and managing weather-related data.
+ *
+ * This ViewModel handles:
+ * - Retrieving the user's current location
+ * - Fetching current weather data, hourly forecast, and daily forecast from the OpenWeatherMap API
+ * - Managing loading, error, and display states for the UI
+ *
+ * Exposes state holders using `mutableStateOf` to enable Compose reactivity.
+ */
 class WeatherViewModel : ViewModel() {
 
     /* ---------- UI 狀態 ---------- */
@@ -42,8 +52,18 @@ class WeatherViewModel : ViewModel() {
     private val _errorMessage = mutableStateOf<String?>(null)
     val errorMessage: State<String?> = _errorMessage
 
-    /* ---------- 入口 ---------- */
 
+    /**
+     * Loads weather data based on the user's current device location.
+     *
+     * This includes:
+     * - Getting the current location using [getDeviceLocation]
+     * - Fetching city name, current weather, hourly forecast, and daily forecast
+     * - Updating state variables to be observed by the UI
+     *
+     * @param context Android Context required for location services
+     * @param apiKey OpenWeatherMap API key
+     */
     fun loadAllData(context: Context, apiKey: String) {
         viewModelScope.launch {
 
@@ -84,6 +104,15 @@ class WeatherViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Loads weather data for a specified latitude and longitude.
+     * Useful for city selection pages or bookmarked locations.
+     *
+     * @param lat Latitude of the target location
+     * @param lon Longitude of the target location
+     * @param context Android Context for potential fallback/error handling
+     * @param apiKey OpenWeatherMap API key
+     */
     fun loadAllDataByCoords(lat: Double, lon: Double, context: Context, apiKey: String) {
         Log.d("WeatherViewModel", "loadAllDataByCoords called with lat=$lat, lon=$lon")
 
@@ -116,6 +145,13 @@ class WeatherViewModel : ViewModel() {
 
 /* ---------- 位置 ---------- */
 
+/**
+ * Attempts to retrieve the user's current location using FusedLocationProviderClient.
+ * Falls back to requesting a new high-accuracy location if last known is null.
+ *
+ * @param context Android context
+ * @return A [Location] object, or null if location could not be retrieved
+ */
 @SuppressLint("MissingPermission")
 private suspend fun getDeviceLocation(context: Context): Location? =
     suspendCancellableCoroutine { cont ->
@@ -136,6 +172,14 @@ private suspend fun getDeviceLocation(context: Context): Location? =
         }
     }
 
+/**
+ * Fetches current weather information from OpenWeatherMap.
+ *
+ * @param lat Latitude
+ * @param lon Longitude
+ * @param apiKey API key for OpenWeatherMap
+ * @return [WeatherData] object containing temperature, description, and icon
+ */
 private suspend fun fetchCurrentWeather(lat: Double, lon: Double, apiKey: String): WeatherData {
     val response = withContext(Dispatchers.IO) {
         RetrofitClient.instance.getCurrentWeather(lat, lon, apiKey)
@@ -152,6 +196,14 @@ private suspend fun fetchCurrentWeather(lat: Double, lon: Double, apiKey: String
     )
 }
 
+/**
+ * Uses reverse geocoding to fetch the name of a city from its coordinates.
+ *
+ * @param lat Latitude
+ * @param lon Longitude
+ * @param apiKey API key for OpenWeatherMap
+ * @return The name of the city, or "Unknown" if not found
+ */
 private suspend fun fetchCityName(lat: Double, lon: Double, apiKey: String): String {
     val response = withContext(Dispatchers.IO) {
         RetrofitClient.instance.reverseGeocoding(lat, lon, 1, apiKey)
@@ -159,6 +211,14 @@ private suspend fun fetchCityName(lat: Double, lon: Double, apiKey: String): Str
     return response.firstOrNull()?.name ?: "Unknown"
 }
 
+/**
+ * Fetches hourly forecast data for the next several hours (typically 3-hour intervals).
+ *
+ * @param lat Latitude
+ * @param lon Longitude
+ * @param apiKey API key for OpenWeatherMap
+ * @return A list of [HourlyWeather] entries (up to 8 time slots)
+ */
 private suspend fun fetchHourlyWeather(lat: Double, lon: Double, apiKey: String): List<HourlyWeather> {
     val response = withContext(Dispatchers.IO) {
         RetrofitClient.instance.getForecast(lat, lon, apiKey)
@@ -174,6 +234,20 @@ private suspend fun fetchHourlyWeather(lat: Double, lon: Double, apiKey: String)
     }
 }
 
+/**
+ * Processes OpenWeatherMap 3-hour interval forecast to extract daily summaries for the next 5 days.
+ *
+ * Includes:
+ * - Date parsing and grouping by day
+ * - Average/min/max temperatures
+ * - Noon-hour condition (or fallback to first available entry)
+ * - Extracted values: humidity, wind, icon, etc.
+ *
+ * @param lat Latitude
+ * @param lon Longitude
+ * @param apiKey API key for OpenWeatherMap
+ * @return A list of [DailyWeather] representing a 5-day forecast
+ */
 private suspend fun fetchNextFiveDaysWeather(lat: Double, lon: Double, apiKey: String): List<DailyWeather> {
     val forecast = withContext(Dispatchers.IO) {
         RetrofitClient.instance.getForecast(lat, lon, apiKey)
@@ -223,6 +297,5 @@ private suspend fun fetchNextFiveDaysWeather(lat: Double, lon: Double, apiKey: S
             )
         )
     }
-
     return dailyList
 }

@@ -196,8 +196,16 @@ fun CityScreen(navController: NavController, userId: String) {
 }
 
 /**
- * CityItem is a UI component that shows one city’s name, weather, and icon.
- * When clicked, it triggers the provided onClick callback.
+ * [CityItem] is a composable UI component that displays a card representing a city.
+ * It includes the city name, description (e.g., "My Location"), weather icon, and temperature.
+ *
+ * This component is interactive:
+ * - A tap triggers the provided [onClick] callback (e.g., navigate to weather details)
+ * - A long press triggers the [onLongPress] callback (e.g., prompt to delete)
+ *
+ * @param city The [CityInfo] object containing city and weather data to display
+ * @param onClick Lambda to invoke when the item is tapped
+ * @param onLongPress Lambda to invoke when the item is long-pressed
  */
 @Composable
 fun CityItem(

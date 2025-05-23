@@ -25,8 +25,18 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 /**
- * ViewModel for managing city-related data in the weather app.
- * It handles loading weather info for the current location, default cities, and search queries.
+ * ViewModel responsible for managing the list of cities and weather data
+ * in the WeatherWise app.
+ *
+ * This ViewModel:
+ * - Loads the current device location and stores it as "My Location" in the database (if not already present)
+ * - Retrieves saved cities from the local Room database (via [CityDao])
+ * - Handles city search using the OpenWeatherMap Geocoding API
+ * - Fetches weather information for a searched city and stores it locally
+ * - Manages UI-related states such as search text and search results
+ *
+ * @param application Application context, used for accessing system services (e.g., location)
+ * @param userId Unique user ID to scope database entries to the current user
  */
 class CityViewModel(application: Application, private val userId: String) : AndroidViewModel(application) {
 
@@ -45,6 +55,8 @@ class CityViewModel(application: Application, private val userId: String) : Andr
     var searchText by mutableStateOf("")
 
     init {
+        // On ViewModel creation, attempt to fetch device's current location and weather.
+        // Insert the result into the local database if not already saved.
         val context = getApplication<Application>().applicationContext
 
         viewModelScope.launch {
@@ -99,7 +111,12 @@ class CityViewModel(application: Application, private val userId: String) : Andr
     }
 
     /**
-     * Search for cities using the user's query via the Geo API.
+     * Searches for cities matching the user input using the OpenWeatherMap Geocoding API.
+     *
+     * On success, updates the [searchResults] list.
+     * On failure (e.g., network error), logs the exception and clears the results.
+     *
+     * @param query User input string to search for
      */
     fun searchCity(query: String) {
         viewModelScope.launch {
@@ -138,7 +155,11 @@ class CityViewModel(application: Application, private val userId: String) : Andr
     }
 
     /**
-     * Add a new city to the city list if it's not already present.
+     * Adds a new city to the local Room database for the current user.
+     *
+     * This function should be called after fetching weather and location data via [CityInfo].
+     *
+     * @param city The city data to insert into the database
      */
     fun addCity(city: CityInfo) {
         viewModelScope.launch {
@@ -156,8 +177,11 @@ class CityViewModel(application: Application, private val userId: String) : Andr
     }
 
     /**
-     * Get weather and coordinate information for a city by name.
-     * Returns a CityInfo object or null if failed.
+     * Fetches weather and location information for the given city name using both the geocoding
+     * and current weather endpoints.
+     *
+     * @param cityName The name of the city to fetch data for
+     * @return A [CityInfo] object with populated fields, or `null` if the city was not found or an error occurred
      */
     private suspend fun getCityInfoFromApi(cityName: String): CityInfo? {
         return try {
@@ -187,7 +211,11 @@ class CityViewModel(application: Application, private val userId: String) : Andr
     }
 
     /**
-     * Use reverse geocoding API to get the city name from latitude and longitude.
+     * Performs reverse geocoding to obtain a human-readable city name from geographic coordinates.
+     *
+     * @param lat Latitude of the location
+     * @param lon Longitude of the location
+     * @return The name of the city, or "Unknown" if not found
      */
     private suspend fun fetchCityName(lat: Double, lon: Double): String {
         val result = RetrofitClient.instance.reverseGeocoding(lat, lon, 1, apiKey)
@@ -195,7 +223,10 @@ class CityViewModel(application: Application, private val userId: String) : Andr
     }
 
     /**
-     * Maps weather condition keywords (e.g., "Clear", "Rain") to icon resource IDs.
+     * Maps a weather condition string (e.g., "Clear", "Rain") to the appropriate weather icon resource ID.
+     *
+     * @param description Weather condition from the API response
+     * @return Drawable resource ID corresponding to the weather condition, or a fallback icon if unknown
      */
     private fun getIconRes(description: String): Int {
         val iconMap = mapOf(
@@ -212,8 +243,12 @@ class CityViewModel(application: Application, private val userId: String) : Andr
     }
 
     /**
-     * Get the device’s current location using Google Play Services.
-     * Fallbacks to last known location, then active location request.
+     * Retrieves the device's current location using Google's FusedLocationProviderClient.
+     *
+     * If the last known location is unavailable, it requests a new high-accuracy location fix.
+     *
+     * @param context The application context
+     * @return [Location] object or `null` if location access fails
      */
     @SuppressLint("MissingPermission") // Caller is expected to handle permission check
     private suspend fun getDeviceLocation(context: Context): Location? =
@@ -236,6 +271,12 @@ class CityViewModel(application: Application, private val userId: String) : Andr
         }
 }
 
+/**
+ * Factory class for constructing a [CityViewModel] with custom parameters.
+ *
+ * @property application The application context.
+ * @property userId The ID of the current user.
+ */
 class CityViewModelFactory(
     private val application: Application,
     private val userId: String

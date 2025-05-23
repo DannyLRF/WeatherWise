@@ -76,7 +76,16 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.time.LocalDate
 
-// This is for navigation to main page
+/**
+ * Composable function that represents the main weather dashboard screen.
+ * This screen loads and displays weather data for the user's current location.
+ *
+ * The data is loaded once when the composable is first composed, using [LaunchedEffect].
+ * It uses a shared UI component, [WeatherContentUI], to display the weather information.
+ *
+ * @param navController The NavController for handling in-app navigation
+ * @param userId The ID of the currently logged-in user, used for user-specific operations
+ */
 @Composable
 fun DashboardPage(navController: NavController, userId: String ) {
     val context = LocalContext.current
@@ -94,7 +103,18 @@ fun DashboardPage(navController: NavController, userId: String ) {
     WeatherContentUI(viewModel, navController, userId ) // Shared UI content function
 }
 
-// This is for navigation to city selected
+/**
+ * Composable function that displays weather data for a city selected by the user.
+ * It loads weather information based on the provided latitude and longitude coordinates.
+ *
+ * This function is typically navigated to from a city selection screen.
+ * It uses a keyed ViewModel instance to cache results per location.
+ *
+ * @param lat Latitude of the selected city
+ * @param lon Longitude of the selected city
+ * @param navController The NavController for navigation between screens
+ * @param userId The ID of the currently logged-in user
+ */
 @Composable
 fun CityWeatherPage(lat: Double, lon: Double, navController: NavController, userId: String ) {
     Log.d("WeatherMainPage", "WeatherMainPage loaded with lat=$lat, lon=$lon")
@@ -113,6 +133,26 @@ fun CityWeatherPage(lat: Double, lon: Double, navController: NavController, user
     WeatherContentUI(viewModel, navController, userId) // Shared UI content function
 }
 
+/**
+ * Composable UI function that displays the main weather content for the dashboard or selected city.
+ *
+ * This function handles:
+ * - Requesting location permission from the user
+ * - Loading weather data via [WeatherViewModel]
+ * - Observing weather-related state flows (e.g., current weather, hourly/daily forecasts)
+ * - Displaying different UI states: loading, error, permission request, and data
+ *
+ * The weather content includes:
+ * - Current temperature and condition
+ * - Weather icon mapped from description
+ * - Hourly temperature graph (if available)
+ * - 3-day forecast with optional navigation to full 5-day view
+ * - Notification banner based on [SettingsViewModel] preferences
+ *
+ * @param viewModel The [WeatherViewModel] instance providing weather data and UI state
+ * @param navController Navigation controller used for navigating to other screens (e.g., city selector, settings)
+ * @param userId The unique ID of the current user, used for city-specific navigation
+ */
 @Composable
 fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController, userId: String ) {
     val context = LocalContext.current
