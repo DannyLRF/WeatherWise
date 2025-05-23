@@ -76,7 +76,7 @@ import java.time.LocalDate
 
 // This is for navigation to main page
 @Composable
-fun WeatherMainPage(navController: NavController, userId: String ) {
+fun DashboardPage(navController: NavController, userId: String ) {
     val context = LocalContext.current
     val viewModel: WeatherViewModel = viewModel()
     val hasLoaded = remember { mutableStateOf(false) }
@@ -93,9 +93,11 @@ fun WeatherMainPage(navController: NavController, userId: String ) {
 
 // This is for navigation to city selected
 @Composable
-fun WeatherMainPage(lat: Double, lon: Double, navController: NavController, userId: String ) {
+fun CityWeatherPage(lat: Double, lon: Double, navController: NavController, userId: String ) {
+    Log.d("WeatherMainPage", "WeatherMainPage loaded with lat=$lat, lon=$lon")
+
     val context = LocalContext.current
-    val viewModel: WeatherViewModel = viewModel()
+    val viewModel: WeatherViewModel = viewModel(key = "city_$lat$lon")
     val hasLoaded = remember { mutableStateOf(false) }
 
     // Load data for the given coordinates only once
@@ -150,7 +152,7 @@ fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController, 
         } else {
 
             // If permission was already granted (e.g. from previous session or initial check)
-            viewModel.loadAllData(context, "3a936acc8bb109dcb94017abbc0ec0fb")
+            // viewModel.loadAllData(context, "3a936acc8bb109dcb94017abbc0ec0fb")
         }
     }
 

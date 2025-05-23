@@ -1,5 +1,6 @@
 package com.example.weatherwise // Or your correct package
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,7 +44,7 @@ fun WeatherAppNavigation(
             val userId = authViewModel.currentUserId
 
             if (userId != null) {
-                WeatherMainPage(navController = navController, userId = userId)
+                DashboardPage(navController = navController, userId = userId)
             } else {
                 // ✅ 弹出错误提示
                 Toast.makeText(context, "Please log in to continue", Toast.LENGTH_SHORT).show()
@@ -69,9 +70,18 @@ fun WeatherAppNavigation(
             val lon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull() ?: 0.0
             val userId = authViewModel.currentUserId
 
+            Log.d("Navigation", "Navigated to main_page with lat=$lat, lon=$lon")
+            Log.d("Navigation", "Current userId = $userId")
+
             if (userId != null) {
-                WeatherMainPage(lat = lat, lon = lon, navController = navController, userId = userId)
+
+                Log.d("Navigation", "Navigating to WeatherMainPage with userId=$userId")
+
+                CityWeatherPage(lat = lat, lon = lon, navController = navController, userId = userId)
             } else {
+
+                Log.w("Navigation", "userId is null, redirecting to login")
+
                 Toast.makeText(LocalContext.current, "Please log in to view weather data.", Toast.LENGTH_SHORT).show()
                 LaunchedEffect(Unit) {
                     navController.navigate("login") {
