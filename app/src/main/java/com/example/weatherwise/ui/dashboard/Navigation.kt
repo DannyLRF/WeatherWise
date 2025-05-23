@@ -51,10 +51,10 @@ fun WeatherAppNavigation(
             if (userId != null) {
                 DashboardPage(navController = navController, userId = userId)
             } else {
-                // ✅ 弹出错误提示
+                // ✅ Error
                 Toast.makeText(context, "Please log in to continue", Toast.LENGTH_SHORT).show()
 
-                // ✅ 跳转到登录页
+                // ✅ To log in
                 LaunchedEffect(Unit) {
                     navController.navigate("login") {
                         popUpTo("main_weather_dashboard") { inclusive = true } // 可选：清除栈
