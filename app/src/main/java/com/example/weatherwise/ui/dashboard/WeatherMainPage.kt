@@ -197,6 +197,25 @@ fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController, 
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+        //Show notifications if switch open
+        val settingsViewModel: SettingsViewModel = viewModel() //
+
+        val settings by settingsViewModel.settings.collectAsState()
+        var showReminder by remember { mutableStateOf(true) }
+
+        if (settings.weatherNotifications && showReminder) {
+            //Text("notification used", color = Color.Green)
+            Button(
+                onClick = {
+                    showReminder = false
+                },
+
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Weather Notification")
+
+            }
+        }
 
         // Content Area
         if (!hasLocationPermission && cityName == "Loading...") {
@@ -360,6 +379,8 @@ fun WeatherContentUI(viewModel: WeatherViewModel, navController: NavController, 
                 }
             }
         }
+
+
     }
 }
 
@@ -389,7 +410,7 @@ data class WeatherData(
 )
 
 data class HourlyWeather(
-    val time: String,         // 格式如 "15:00"
+    val time: String,
     val temperature: Double,
     val icon: String,
     val description: String

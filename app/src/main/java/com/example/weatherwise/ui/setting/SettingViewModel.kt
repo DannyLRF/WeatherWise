@@ -4,6 +4,10 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.weatherwise.Settings
+import com.example.weatherwise.TemperatureSettings
+import com.example.weatherwise.TemperatureUnit
+import com.example.weatherwise.WindSpeedSettings
+import com.example.weatherwise.WindSpeedUnit
 
 import com.example.weatherwise.data.SettingsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +38,31 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             }
         }
     }
+
+
+
+    init {
+        // Tell temperature setting change the unit
+        viewModelScope.launch {
+            settings.collect { currentSettings ->
+                TemperatureSettings.currentUnit = when (currentSettings.unit) {
+                    "Celsius" -> TemperatureUnit.CELSIUS
+                    "Fahrenheit" -> TemperatureUnit.FAHRENHEIT
+                    else -> TemperatureUnit.CELSIUS
+                }
+
+                WindSpeedSettings.currentUnit = when (currentSettings.windSpeed) {
+                    "M/s" -> WindSpeedUnit.METER_PER_SECOND
+                    "KM/h" -> WindSpeedUnit.KILOMETER_PER_HOUR
+                    "MPH" -> WindSpeedUnit.MILES_PER_HOUR
+                    else -> WindSpeedUnit.METER_PER_SECOND
+                }
+            }
+
+
+        }
+    }
+
 
     fun updateUnit(unit: String) = save(_settings.value.copy(unit = unit))
     fun updateWindSpeed(speed: String) = save(_settings.value.copy(windSpeed = speed))
